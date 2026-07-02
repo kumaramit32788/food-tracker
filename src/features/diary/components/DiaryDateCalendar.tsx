@@ -1,3 +1,4 @@
+import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
 import ChevronLeftOutlinedIcon from '@mui/icons-material/ChevronLeftOutlined';
 import ChevronRightOutlinedIcon from '@mui/icons-material/ChevronRightOutlined';
 import { Box, Button, IconButton, Stack, Typography } from '@mui/material';
@@ -128,7 +129,7 @@ export function DiaryDateCalendar({
               sx={{
                 minWidth: 0,
                 p: 0.75,
-                borderRadius: 2,
+                borderRadius: APP_BORDER_RADIUS_SM,
                 flexDirection: 'column',
                 gap: 0.25,
                 opacity: isOutsideMonth ? 0.35 : 1,

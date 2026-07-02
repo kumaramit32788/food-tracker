@@ -1,3 +1,4 @@
+import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import type { NutritionPer100g } from '@/types/nutrition.types.ts';
 import { formatCalories, formatGrams } from '@/utils/formatNutrition.ts';
@@ -32,7 +33,7 @@ export function FoodNutritionGrid({ title, nutrition, baseUnit = 'g' }: FoodNutr
     <Box
       sx={{
         p: 2,
-        borderRadius: 3,
+        borderRadius: APP_BORDER_RADIUS_SM,
         bgcolor: 'action.hover',
         border: '1px solid',
         borderColor: 'divider',

@@ -2,7 +2,7 @@ import { Alert, Box, Link, Stack, Typography } from '@mui/material';
 
 export function MedicalDisclaimer() {
   return (
-    <Alert severity="info" sx={{ borderRadius: 2 }}>
+    <Alert severity="info">
       <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
         Wellness disclaimer
       </Typography>

@@ -1,3 +1,4 @@
+import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
 import { Box, Grid, Stack, Typography } from '@mui/material';
 import type { RecipeNutritionResult } from '@/utils/calculateRecipeNutrition.ts';
 import { formatCalories, formatGrams } from '@/utils/formatNutrition.ts';
@@ -13,7 +14,7 @@ function MacroTile({ label, value }: { label: string; value: string }) {
     <Box
       sx={{
         p: 1.5,
-        borderRadius: 2,
+        borderRadius: APP_BORDER_RADIUS_SM,
         bgcolor: 'action.hover',
         textAlign: 'center',
       }}
@@ -54,7 +55,7 @@ export function RecipeNutritionSummary({
       <Box
         sx={{
           p: 2,
-          borderRadius: 3,
+          borderRadius: APP_BORDER_RADIUS_SM,
           bgcolor: 'primary.main',
           color: 'primary.contrastText',
         }}

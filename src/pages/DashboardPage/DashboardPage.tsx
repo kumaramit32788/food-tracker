@@ -21,9 +21,12 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { BmiSummaryCard } from '@/features/analytics/components/BmiSummaryCard.tsx';
 import { MacroPieChart } from '@/features/analytics/components/MacroPieChart.tsx';
 import { WeeklyCalorieChart } from '@/features/analytics/components/WeeklyCalorieChart.tsx';
+import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
 import { MEAL_TYPES } from '@/constants/mealTypes.ts';
+import type { MealType } from '@/constants/mealTypes.ts';
 import { ROUTES } from '@/constants/routes.ts';
 import { DiaryDatePicker } from '@/features/diary/components/DiaryDatePicker.tsx';
+import { ComposeMealDrawer } from '@/features/diary/components/ComposeMealDrawer.tsx';
 import { DiaryMealSection } from '@/features/diary/components/DiaryMealSection.tsx';
 import { WaterTracker } from '@/features/diary/components/WaterTracker.tsx';
 import { useDiary, useDiaryRange } from '@/features/diary/hooks/useDiary.ts';
@@ -44,6 +47,7 @@ import {
   calculateDailyTotalsByDate,
   calculatePeriodIntakeFromDiaryEntries,
 } from '@/utils/nutritionEngine.ts';
+import { distributeDailyGoalsToMeals } from '@/utils/mealGoals.ts';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -70,7 +74,7 @@ function QuickActionCard({ title, description, icon, color, onClick }: QuickActi
               sx={{
                 width: 48,
                 height: 48,
-                borderRadius: 2.5,
+                borderRadius: APP_BORDER_RADIUS_SM,
                 display: 'grid',
                 placeItems: 'center',
                 bgcolor: alpha(color, 0.12),
@@ -107,6 +111,7 @@ export function DashboardPage() {
   const today = getLocalDateKey();
   const [selectedDate, setSelectedDate] = useState(today);
   const [viewMonth, setViewMonth] = useState(() => parseDateKey(today));
+  const [composeMeal, setComposeMeal] = useState<MealType | null>(null);
   const weekRange = getWeekRange();
   const monthRange = getMonthRange();
   const last7Range = getLastNDaysRange(7);
@@ -158,6 +163,18 @@ export function DashboardPage() {
         enumerateDateKeys(last7Range.start, last7Range.end),
       ),
     [last7Entries, last7Range.end, last7Range.start],
+  );
+
+  const mealGoals = useMemo(
+    () =>
+      distributeDailyGoalsToMeals({
+        calories: calorieGoal,
+        protein: proteinGoal,
+        carbs: carbsGoal,
+        fat: fatGoal,
+        fiber: fiberGoal,
+      }),
+    [calorieGoal, proteinGoal, carbsGoal, fatGoal, fiberGoal],
   );
 
   const { dailyTotal, remainingCalories, warnings, progress } = intake;
@@ -265,24 +282,24 @@ export function DashboardPage() {
       </Typography>
 
       <Box sx={{ mb: 3 }}>
-
-
-        <Grid container spacing={2}>
+        <Grid container spacing={2.5}>
           {MEAL_TYPES.map((mealType) => (
             <Grid key={mealType} size={{ xs: 12, md: 6 }}>
               <DiaryMealSection
                 mealType={mealType}
                 entries={entriesByMeal[mealType]}
+                goals={mealGoals[mealType]}
                 onRemove={(id) => void removeEntry(id)}
                 onAddFood={(meal) =>
                   navigate(`${ROUTES.FOODS}?meal=${meal}&date=${selectedDate}`)
                 }
+                onAddIngredients={(meal) => setComposeMeal(meal)}
               />
             </Grid>
           ))}
         </Grid>
 
-        <Card sx={{ mb: 2,mt:2 }}>
+        <Card sx={{ mb: 2, mt: 2 }}>
           <CardContent>
             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
               Water intake
@@ -423,6 +440,14 @@ export function DashboardPage() {
           />
         </Grid>
       </Grid>
+
+      <ComposeMealDrawer
+        open={composeMeal !== null}
+        onClose={() => setComposeMeal(null)}
+        date={selectedDate}
+        mealType={composeMeal ?? 'lunch'}
+        onLogged={() => setComposeMeal(null)}
+      />
     </>
   );
 }

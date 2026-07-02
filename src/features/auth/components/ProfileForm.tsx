@@ -20,8 +20,10 @@ import { useAuth } from '@/features/auth/hooks/useAuth.ts';
 import {
   profileSchema,
   profileUpdateSchema,
+  type ProfileFormInput,
   type ProfileFormValues,
 } from '@/features/auth/validation/profileSchema.ts';
+import { bindNumberField } from '@/utils/bindNumberField.ts';
 import type { UserProfile } from '@/types/auth.types.ts';
 import {
   calculateCalorieGoal,
@@ -50,10 +52,10 @@ export function ProfileForm() {
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm<ProfileFormValues>({
+  } = useForm<ProfileFormInput, unknown, ProfileFormValues>({
     resolver: zodResolver(
       isDeviceSetup ? profileSchema : profileUpdateSchema,
-    ) as unknown as Resolver<ProfileFormValues>,
+    ) as unknown as Resolver<ProfileFormInput, unknown, ProfileFormValues>,
     defaultValues: {
       name: profile?.name ?? user?.name ?? '',
       age: profile?.age ?? 25,
@@ -80,7 +82,14 @@ export function ProfileForm() {
   const [age, gender, height, weight, activityLevel, goalType] = watchedFields;
 
   useEffect(() => {
-    if (!age || !gender || !height || !weight || !activityLevel || !goalType) {
+    if (
+      age === '' ||
+      height === '' ||
+      weight === '' ||
+      !gender ||
+      !activityLevel ||
+      !goalType
+    ) {
       return;
     }
 
@@ -103,7 +112,7 @@ export function ProfileForm() {
   }, [age, gender, height, weight, activityLevel, goalType, setValue]);
 
   const bmi =
-    weight && height ? calculateBmi(Number(weight), Number(height)) : 0;
+    weight !== '' && height !== '' ? calculateBmi(Number(weight), Number(height)) : 0;
 
   const onSubmit = async (values: ProfileFormValues) => {
     dismissError();
@@ -210,10 +219,9 @@ export function ProfileForm() {
               control={control}
               render={({ field }) => (
                 <TextField
-                  {...field}
+                  {...bindNumberField(field)}
                   label="Age"
                   type="number"
-                  onChange={(event) => field.onChange(Number(event.target.value))}
                   error={Boolean(errors.age)}
                   helperText={errors.age?.message}
                 />
@@ -258,10 +266,9 @@ export function ProfileForm() {
               control={control}
               render={({ field }) => (
                 <TextField
-                  {...field}
+                  {...bindNumberField(field)}
                   label="Height (cm)"
                   type="number"
-                  onChange={(event) => field.onChange(Number(event.target.value))}
                   error={Boolean(errors.height)}
                   helperText={errors.height?.message}
                 />
@@ -275,10 +282,9 @@ export function ProfileForm() {
               control={control}
               render={({ field }) => (
                 <TextField
-                  {...field}
+                  {...bindNumberField(field)}
                   label="Weight (kg)"
                   type="number"
-                  onChange={(event) => field.onChange(Number(event.target.value))}
                   error={Boolean(errors.weight)}
                   helperText={errors.weight?.message}
                 />
@@ -351,10 +357,9 @@ export function ProfileForm() {
               control={control}
               render={({ field }) => (
                 <TextField
-                  {...field}
+                  {...bindNumberField(field)}
                   label="Calories (kcal)"
                   type="number"
-                  onChange={(event) => field.onChange(Number(event.target.value))}
                   error={Boolean(errors.calorieGoal)}
                   helperText={errors.calorieGoal?.message}
                 />
@@ -368,10 +373,9 @@ export function ProfileForm() {
               control={control}
               render={({ field }) => (
                 <TextField
-                  {...field}
+                  {...bindNumberField(field)}
                   label="Protein (g)"
                   type="number"
-                  onChange={(event) => field.onChange(Number(event.target.value))}
                   error={Boolean(errors.proteinGoal)}
                   helperText={errors.proteinGoal?.message}
                 />
@@ -385,10 +389,9 @@ export function ProfileForm() {
               control={control}
               render={({ field }) => (
                 <TextField
-                  {...field}
+                  {...bindNumberField(field)}
                   label="Carbs (g)"
                   type="number"
-                  onChange={(event) => field.onChange(Number(event.target.value))}
                   error={Boolean(errors.carbsGoal)}
                   helperText={errors.carbsGoal?.message}
                 />
@@ -402,10 +405,9 @@ export function ProfileForm() {
               control={control}
               render={({ field }) => (
                 <TextField
-                  {...field}
+                  {...bindNumberField(field)}
                   label="Fat (g)"
                   type="number"
-                  onChange={(event) => field.onChange(Number(event.target.value))}
                   error={Boolean(errors.fatGoal)}
                   helperText={errors.fatGoal?.message}
                 />
@@ -419,10 +421,9 @@ export function ProfileForm() {
               control={control}
               render={({ field }) => (
                 <TextField
-                  {...field}
+                  {...bindNumberField(field)}
                   label="Fiber (g)"
                   type="number"
-                  onChange={(event) => field.onChange(Number(event.target.value))}
                   error={Boolean(errors.fiberGoal)}
                   helperText={errors.fiberGoal?.message}
                 />

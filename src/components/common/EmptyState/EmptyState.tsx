@@ -8,6 +8,8 @@ interface EmptyStateProps {
   icon?: ReactNode;
   actionLabel?: string;
   onAction?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
 }
 
 export function EmptyState({
@@ -16,6 +18,8 @@ export function EmptyState({
   icon,
   actionLabel,
   onAction,
+  secondaryActionLabel,
+  onSecondaryAction,
 }: EmptyStateProps) {
   return (
     <Stack
@@ -53,6 +57,11 @@ export function EmptyState({
       {actionLabel && onAction && (
         <Button variant="contained" onClick={onAction}>
           {actionLabel}
+        </Button>
+      )}
+      {secondaryActionLabel && onSecondaryAction && (
+        <Button variant="outlined" onClick={onSecondaryAction}>
+          {secondaryActionLabel}
         </Button>
       )}
     </Stack>

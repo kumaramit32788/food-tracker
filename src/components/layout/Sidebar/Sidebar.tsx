@@ -1,3 +1,4 @@
+import { APP_BORDER_RADIUS, APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
 import {
   Box,
   Chip,
@@ -92,7 +93,7 @@ export function SidebarContent({ onNavigate }: SidebarProps) {
           sx={{
             width: 40,
             height: 40,
-            borderRadius: 2.5,
+            borderRadius: APP_BORDER_RADIUS_SM,
             display: 'grid',
             placeItems: 'center',
             bgcolor: 'primary.main',
@@ -137,7 +138,7 @@ export function SidebarContent({ onNavigate }: SidebarProps) {
         sx={{
           mt: 2,
           p: 2,
-          borderRadius: 3,
+          borderRadius: APP_BORDER_RADIUS,
           bgcolor: 'action.hover',
           border: '1px solid',
           borderColor: 'divider',

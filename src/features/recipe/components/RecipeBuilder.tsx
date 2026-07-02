@@ -1,3 +1,4 @@
+import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
 import { zodResolver } from '@hookform/resolvers/zod';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
@@ -179,9 +180,28 @@ export function RecipeBuilder() {
 
             <Stack spacing={1}>
               {ingredients.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No ingredients yet. Search your food database to build this recipe.
-                </Typography>
+                <Box
+                  sx={{
+                    py: 3,
+                    px: 2,
+                    textAlign: 'center',
+                    borderRadius: APP_BORDER_RADIUS_SM,
+                    border: 1,
+                    borderColor: 'divider',
+                    borderStyle: 'dashed',
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    No ingredients yet. Search your food database to build this recipe.
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddOutlinedIcon />}
+                    onClick={() => setAddDialogOpen(true)}
+                  >
+                    Add first ingredient
+                  </Button>
+                </Box>
               ) : (
                 ingredients.map((ingredient) => (
                   <RecipeIngredientRow

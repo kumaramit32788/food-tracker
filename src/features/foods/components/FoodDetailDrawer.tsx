@@ -1,3 +1,5 @@
+import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
+import KitchenOutlinedIcon from '@mui/icons-material/KitchenOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import {
@@ -45,6 +47,7 @@ interface FoodDetailDrawerProps {
   onDelete?: (food: Food) => void;
   onOpen?: (food: Food) => void;
   onLogged?: () => void;
+  onAddIngredients?: () => void;
   defaultMealType?: MealType;
   logDate?: string;
   togglingFavoriteId?: string | null;
@@ -59,6 +62,7 @@ export function FoodDetailDrawer({
   onDelete,
   onOpen,
   onLogged,
+  onAddIngredients,
   defaultMealType,
   logDate,
   togglingFavoriteId,
@@ -195,7 +199,7 @@ export function FoodDetailDrawer({
         <Box
           sx={{
             p: 2,
-            borderRadius: 3,
+            borderRadius: APP_BORDER_RADIUS_SM,
             bgcolor: 'primary.main',
             color: 'primary.contrastText',
           }}
@@ -259,6 +263,19 @@ export function FoodDetailDrawer({
             {isLogging ? 'Logging...' : 'Log this serving'}
           </Button>
         </Stack>
+        {defaultMealType && onAddIngredients && (
+          <Button
+            size="small"
+            startIcon={<KitchenOutlinedIcon />}
+            onClick={() => {
+              onClose();
+              onAddIngredients();
+            }}
+            sx={{ mt: 1 }}
+          >
+            Or build from ingredients
+          </Button>
+        )}
       </Box>
 
       {food.isCustom && onDelete && (

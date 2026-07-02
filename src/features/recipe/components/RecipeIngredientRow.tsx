@@ -1,3 +1,4 @@
+import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { IconButton, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import type { RecipeIngredientDraft } from '@/types/recipe.types.ts';
@@ -26,7 +27,7 @@ export function RecipeIngredientRow({
       spacing={1.5}
       sx={{
         p: 1.5,
-        borderRadius: 2,
+        borderRadius: APP_BORDER_RADIUS_SM,
         border: '1px solid',
         borderColor: 'divider',
         alignItems: { sm: 'center' },

@@ -1,3 +1,4 @@
+import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
@@ -97,7 +98,7 @@ export function SettingsPage() {
                 sx={{
                   width: 48,
                   height: 48,
-                  borderRadius: 2,
+                  borderRadius: APP_BORDER_RADIUS_SM,
                   display: 'grid',
                   placeItems: 'center',
                   bgcolor: 'primary.main',
@@ -150,7 +151,7 @@ export function SettingsPage() {
                   sx={{
                     width: 40,
                     height: 40,
-                    borderRadius: 2,
+                    borderRadius: APP_BORDER_RADIUS_SM,
                     display: 'grid',
                     placeItems: 'center',
                     bgcolor: 'action.hover',

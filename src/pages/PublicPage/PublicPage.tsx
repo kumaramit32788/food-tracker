@@ -26,7 +26,7 @@ export function PublicPage() {
         </Typography>
       </Box>
 
-      <Alert severity="info" sx={{ maxWidth: 560, textAlign: 'left', borderRadius: 2 }}>
+      <Alert severity="info" sx={{ maxWidth: 560, textAlign: 'left' }}>
         NutriTrack provides general nutrition estimates for personal wellness only — not medical
         advice. Consult a healthcare professional before changing your diet.
       </Alert>

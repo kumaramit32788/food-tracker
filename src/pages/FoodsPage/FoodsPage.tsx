@@ -1,5 +1,6 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import FilterAltOffOutlinedIcon from '@mui/icons-material/FilterAltOffOutlined';
+import KitchenOutlinedIcon from '@mui/icons-material/KitchenOutlined';
 import { Alert, Box, Button, Chip, Stack } from '@mui/material';
 import { useCallback, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -7,7 +8,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { SearchInput } from '@/components/common/SearchInput';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { isMealType } from '@/constants/mealTypes.ts';
+import { isMealType, MEAL_TYPE_LABELS } from '@/constants/mealTypes.ts';
 import { ROUTES } from '@/constants/routes.ts';
 import {
   getLocalDateKey,
@@ -20,6 +21,8 @@ import {
   FoodDetailDrawer,
   FoodListSection,
 } from '@/features/foods/components';
+import { ComposeMealDrawer } from '@/features/diary/components/ComposeMealDrawer.tsx';
+import { useDiary } from '@/features/diary/hooks/useDiary.ts';
 import { useFoodBrowser } from '@/features/foods/hooks/useFoodBrowser.ts';
 import type { Food } from '@/types/food.types.ts';
 import type { CreateFoodInput } from '@/types/food.types.ts';
@@ -60,8 +63,11 @@ export function FoodsPage() {
     getFoodById,
   } = useFoodBrowser();
 
+  const { logFood } = useDiary(logDate);
+
   const [selectedFoodId, setSelectedFoodId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [composeMealOpen, setComposeMealOpen] = useState(false);
   const [createInitialValues, setCreateInitialValues] = useState<Partial<CreateFoodFormValues>>({});
 
   const trimmedQuery = query.trim();
@@ -72,13 +78,30 @@ export function FoodsPage() {
     setCreateDialogOpen(true);
   }, []);
 
+  const saveFoodOnly = useCallback(
+    async (input: CreateFoodInput) => createFood(input) as Promise<Food>,
+    [createFood],
+  );
+
   const handleCreateFood = useCallback(
     async (input: CreateFoodInput) => {
       const food = (await createFood(input)) as Food;
+
+      if (diaryMealType) {
+        await logFood({
+          date: logDate,
+          mealType: diaryMealType,
+          foodId: food.id,
+          quantity: { amount: 1, unit: food.defaultServing.unit },
+        });
+        navigate(ROUTES.DASHBOARD);
+        return food;
+      }
+
       setSelectedFoodId(food.id);
       return food;
     },
-    [createFood],
+    [createFood, diaryMealType, logDate, logFood, navigate],
   );
 
   const selectedFood = selectedFoodId ? getFoodById(selectedFoodId) : null;
@@ -156,6 +179,25 @@ export function FoodsPage() {
         />
       </Box>
 
+      {diaryMealType && (
+        <Alert
+          severity="info"
+          sx={{ mb: 3 }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              startIcon={<KitchenOutlinedIcon />}
+              onClick={() => setComposeMealOpen(true)}
+            >
+              Add ingredients
+            </Button>
+          }
+        >
+          Logging to {MEAL_TYPE_LABELS[diaryMealType]} · {logDate}
+        </Alert>
+      )}
+
       <FoodCategoryFilter
         selectedCategory={category}
         categoryCounts={categoryCounts}
@@ -188,13 +230,27 @@ export function FoodsPage() {
           }
           description={
             isSearchWithNoResults
-              ? 'Add this food with calories, protein, carbs, and fat per 100g.'
+              ? diaryMealType
+                ? 'Add ingredients to build this meal, or enter nutrition manually.'
+                : 'Add this food with calories, protein, carbs, and fat per 100g.'
               : 'Try a different search term, remove filters, or add your own custom food.'
           }
           actionLabel={
-            isSearchWithNoResults ? `Add "${trimmedQuery}"` : 'Add custom food'
+            isSearchWithNoResults
+              ? diaryMealType
+                ? `Add "${trimmedQuery}" manually`
+                : `Add "${trimmedQuery}"`
+              : 'Add custom food'
           }
           onAction={() => openCreateDialog(isSearchWithNoResults ? trimmedQuery : undefined)}
+          secondaryActionLabel={
+            isSearchWithNoResults && diaryMealType ? 'Add ingredients' : undefined
+          }
+          onSecondaryAction={
+            isSearchWithNoResults && diaryMealType
+              ? () => openCreateDialog(trimmedQuery)
+              : undefined
+          }
         />
       ) : (
         <>
@@ -247,6 +303,9 @@ export function FoodsPage() {
         defaultMealType={diaryMealType ?? undefined}
         logDate={logDate}
         onLogged={diaryMealType ? () => navigate(`${ROUTES.DASHBOARD}`) : undefined}
+        onAddIngredients={
+          diaryMealType ? () => openCreateDialog() : undefined
+        }
         togglingFavoriteId={togglingFavoriteId}
         isDeleting={isDeleting}
       />
@@ -255,9 +314,24 @@ export function FoodsPage() {
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         onSubmit={handleCreateFood}
+        onSaveFood={saveFoodOnly}
         isSubmitting={isCreating}
         initialValues={createInitialValues}
+        logContext={
+          diaryMealType ? { date: logDate, mealType: diaryMealType } : undefined
+        }
+        onIngredientsLogged={() => navigate(ROUTES.DASHBOARD)}
       />
+
+      {diaryMealType && (
+        <ComposeMealDrawer
+          open={composeMealOpen}
+          onClose={() => setComposeMealOpen(false)}
+          date={logDate}
+          mealType={diaryMealType}
+          onLogged={() => navigate(ROUTES.DASHBOARD)}
+        />
+      )}
     </>
   );
 }

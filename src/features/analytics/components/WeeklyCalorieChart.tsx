@@ -1,3 +1,4 @@
+import { APP_BORDER_RADIUS } from '@/constants/shape.ts';
 import { Box, Typography, useTheme } from '@mui/material';
 import {
   Bar,
@@ -66,7 +67,7 @@ export function WeeklyCalorieChart({
                 contentStyle={{
                   backgroundColor: theme.palette.background.paper,
                   border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 8,
+                  borderRadius: APP_BORDER_RADIUS,
                 }}
               />
               {calorieGoal ? (

@@ -1,19 +1,25 @@
 import { z } from 'zod';
 import { FOOD_CATEGORIES } from '@/constants/foodCategories.ts';
 
-const nonNegativeNumber = z.number().min(0);
+const formNumber = (build: (schema: z.ZodNumber) => z.ZodNumber) => {
+  const numberSchema = build(z.number({ error: 'This field is required' }));
+  return z
+    .union([numberSchema, z.literal('')])
+    .refine((value) => value !== '', { message: 'This field is required' })
+    .transform((value) => value as z.infer<typeof numberSchema>);
+};
 
 export const createFoodSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters'),
   category: z.enum(FOOD_CATEGORIES),
-  calories: nonNegativeNumber,
-  protein: nonNegativeNumber,
-  carbs: nonNegativeNumber,
-  fat: nonNegativeNumber,
-  fiber: nonNegativeNumber,
-  sugar: nonNegativeNumber,
-  sodium: nonNegativeNumber,
-  servingAmount: z.number().positive('Serving amount must be greater than 0'),
+  calories: formNumber((n) => n.min(0)),
+  protein: formNumber((n) => n.min(0)),
+  carbs: formNumber((n) => n.min(0)),
+  fat: formNumber((n) => n.min(0)),
+  fiber: formNumber((n) => n.min(0)),
+  sugar: formNumber((n) => n.min(0)),
+  sodium: formNumber((n) => n.min(0)),
+  servingAmount: formNumber((n) => n.positive('Serving amount must be greater than 0')),
   servingUnit: z.enum([
     'g',
     'kg',
@@ -37,6 +43,7 @@ export const createFoodSchema = z.object({
 });
 
 export type CreateFoodFormValues = z.infer<typeof createFoodSchema>;
+export type CreateFoodFormInput = z.input<typeof createFoodSchema>;
 
 export const DEFAULT_CREATE_FOOD_VALUES: CreateFoodFormValues = {
   name: '',

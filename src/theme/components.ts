@@ -1,3 +1,4 @@
+import { APP_BORDER_RADIUS, APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
 import { alpha } from '@mui/material/styles';
 import type { Components, Theme } from '@mui/material/styles';
 
@@ -13,7 +14,7 @@ export const components: Components<Theme> = {
         height: 8,
       },
       '*::-webkit-scrollbar-thumb': {
-        borderRadius: 8,
+        borderRadius: APP_BORDER_RADIUS,
         backgroundColor: 'rgba(0,0,0,0.18)',
       },
     },
@@ -21,7 +22,7 @@ export const components: Components<Theme> = {
   MuiCard: {
     styleOverrides: {
       root: ({ theme }) => ({
-        borderRadius: 16,
+        borderRadius: APP_BORDER_RADIUS,
         boxShadow:
           theme.palette.mode === 'light'
             ? '0 4px 20px rgba(46, 125, 50, 0.06)'
@@ -40,7 +41,7 @@ export const components: Components<Theme> = {
   MuiButton: {
     styleOverrides: {
       root: {
-        borderRadius: 10,
+        borderRadius: APP_BORDER_RADIUS,
         padding: '10px 20px',
         textTransform: 'none',
         fontWeight: 600,
@@ -59,10 +60,31 @@ export const components: Components<Theme> = {
       fullWidth: true,
     },
   },
+  MuiOutlinedInput: {
+    styleOverrides: {
+      root: {
+        borderRadius: APP_BORDER_RADIUS,
+      },
+    },
+  },
+  MuiAlert: {
+    styleOverrides: {
+      root: {
+        borderRadius: APP_BORDER_RADIUS,
+      },
+    },
+  },
+  MuiDialog: {
+    styleOverrides: {
+      paper: {
+        borderRadius: APP_BORDER_RADIUS,
+      },
+    },
+  },
   MuiPaper: {
     styleOverrides: {
       rounded: {
-        borderRadius: 16,
+        borderRadius: APP_BORDER_RADIUS,
       },
     },
   },
@@ -87,7 +109,7 @@ export const components: Components<Theme> = {
   MuiListItemButton: {
     styleOverrides: {
       root: ({ theme }) => ({
-        borderRadius: 12,
+        borderRadius: APP_BORDER_RADIUS,
         marginBottom: 4,
         padding: '10px 14px',
         transition: 'all 0.2s ease',
@@ -111,13 +133,14 @@ export const components: Components<Theme> = {
     styleOverrides: {
       root: {
         fontWeight: 600,
+        borderRadius: APP_BORDER_RADIUS_SM,
       },
     },
   },
   MuiIconButton: {
     styleOverrides: {
       root: {
-        borderRadius: 10,
+        borderRadius: APP_BORDER_RADIUS_SM,
       },
     },
   },
