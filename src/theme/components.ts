@@ -81,6 +81,21 @@ export const components: Components<Theme> = {
       },
     },
   },
+  MuiMenu: {
+    styleOverrides: {
+      paper: {
+        borderRadius: APP_BORDER_RADIUS,
+        overflow: 'hidden',
+      },
+    },
+  },
+  MuiPopover: {
+    styleOverrides: {
+      paper: {
+        borderRadius: APP_BORDER_RADIUS,
+      },
+    },
+  },
   MuiPaper: {
     styleOverrides: {
       rounded: {

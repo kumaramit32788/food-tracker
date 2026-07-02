@@ -1,5 +1,5 @@
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
+import { appRadius } from '@/constants/shape.ts';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 import { AddIngredientDialog } from '@/features/recipe/components/AddIngredientDialog.tsx';
@@ -56,7 +56,7 @@ export function IngredientBuilderSection({
             py: 3,
             px: 2,
             textAlign: 'center',
-            borderRadius: APP_BORDER_RADIUS_SM,
+            borderRadius: appRadius.sm,
             border: 1,
             borderColor: 'divider',
             borderStyle: 'dashed',

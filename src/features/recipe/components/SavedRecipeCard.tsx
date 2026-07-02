@@ -1,4 +1,4 @@
-import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
+import { appRadius } from '@/constants/shape.ts';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import RamenDiningOutlinedIcon from '@mui/icons-material/RamenDiningOutlined';
 import {
@@ -31,7 +31,7 @@ export function SavedRecipeCard({ recipe, onSelect, onDelete }: SavedRecipeCardP
                 sx={{
                   width: 40,
                   height: 40,
-                  borderRadius: APP_BORDER_RADIUS_SM,
+                  borderRadius: appRadius.sm,
                   display: 'grid',
                   placeItems: 'center',
                   bgcolor: 'action.hover',

@@ -21,7 +21,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { BmiSummaryCard } from '@/features/analytics/components/BmiSummaryCard.tsx';
 import { MacroPieChart } from '@/features/analytics/components/MacroPieChart.tsx';
 import { WeeklyCalorieChart } from '@/features/analytics/components/WeeklyCalorieChart.tsx';
-import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
+import { appRadius } from '@/constants/shape.ts';
 import { MEAL_TYPES } from '@/constants/mealTypes.ts';
 import type { MealType } from '@/constants/mealTypes.ts';
 import { ROUTES } from '@/constants/routes.ts';
@@ -74,7 +74,7 @@ function QuickActionCard({ title, description, icon, color, onClick }: QuickActi
               sx={{
                 width: 48,
                 height: 48,
-                borderRadius: APP_BORDER_RADIUS_SM,
+                borderRadius: appRadius.sm,
                 display: 'grid',
                 placeItems: 'center',
                 bgcolor: alpha(color, 0.12),

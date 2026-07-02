@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useState, type ReactNode } from 'react';
-import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
+import { appRadius } from '@/constants/shape.ts';
 import { MEAL_TYPE_LABELS } from '@/constants/mealTypes.ts';
 import type { MealType } from '@/constants/mealTypes.ts';
 import type { DiaryEntry } from '@/types/diary.types.ts';
@@ -135,7 +135,7 @@ function MacroStat({ label, consumed, goal, unit }: MacroStatProps) {
         minWidth: 0,
         px: 1.5,
         py: 1,
-        borderRadius: APP_BORDER_RADIUS_SM,
+        borderRadius: appRadius.sm,
         bgcolor: 'action.hover',
       }}
     >
@@ -274,7 +274,7 @@ export function DiaryMealSection({
               py: 2,
               px: 1.5,
               textAlign: 'center',
-              borderRadius: APP_BORDER_RADIUS_SM,
+              borderRadius: appRadius.sm,
               border: 1,
               borderColor: 'divider',
               borderStyle: 'dashed',
@@ -296,7 +296,7 @@ export function DiaryMealSection({
                   gap: 1,
                   py: 1,
                   px: 1.25,
-                  borderRadius: APP_BORDER_RADIUS_SM,
+                  borderRadius: appRadius.sm,
                   bgcolor: 'action.hover',
                 }}
               >

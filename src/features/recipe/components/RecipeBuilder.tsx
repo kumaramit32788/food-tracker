@@ -1,4 +1,4 @@
-import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
+import { appRadius } from '@/constants/shape.ts';
 import { zodResolver } from '@hookform/resolvers/zod';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
@@ -185,7 +185,7 @@ export function RecipeBuilder() {
                     py: 3,
                     px: 2,
                     textAlign: 'center',
-                    borderRadius: APP_BORDER_RADIUS_SM,
+                    borderRadius: appRadius.sm,
                     border: 1,
                     borderColor: 'divider',
                     borderStyle: 'dashed',

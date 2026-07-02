@@ -1,7 +1,4 @@
-import {
-  APP_BORDER_RADIUS_SM,
-  APP_BORDER_RADIUS_XS,
-} from '@/constants/shape.ts';
+import { appRadius } from '@/constants/shape.ts';
 import { Card, CardContent, Chip, LinearProgress, Stack, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 
@@ -41,7 +38,7 @@ export function MacroCard({ label, consumed, goal, unit, color }: MacroCardProps
                 height: 22,
                 fontWeight: 700,
                 fontSize: 11,
-                borderRadius: APP_BORDER_RADIUS_SM,
+                borderRadius: appRadius.sm,
                 bgcolor: alpha(accentColor, 0.12),
                 color: isOverGoal ? 'warning.dark' : accentColor,
                 border: `1px solid ${alpha(accentColor, 0.25)}`,
@@ -60,10 +57,10 @@ export function MacroCard({ label, consumed, goal, unit, color }: MacroCardProps
             value={displayProgress}
             sx={{
               height: 8,
-              borderRadius: APP_BORDER_RADIUS_XS,
+              borderRadius: appRadius.xs,
               bgcolor: alpha(accentColor, 0.12),
               '& .MuiLinearProgress-bar': {
-                borderRadius: APP_BORDER_RADIUS_XS,
+                borderRadius: appRadius.xs,
                 bgcolor: accentColor,
               },
             }}

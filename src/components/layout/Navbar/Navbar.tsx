@@ -1,4 +1,4 @@
-import { APP_BORDER_RADIUS } from '@/constants/shape.ts';
+import { appRadius } from '@/constants/shape.ts';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
@@ -96,7 +96,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           </Tooltip>
 
           <Tooltip title="Account">
-            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} aria-label="Account menu">
+            <IconButton
+              onClick={(e) => setAnchorEl(e.currentTarget)}
+              aria-label="Account menu"
+              sx={{ borderRadius: '50%' }}
+            >
               <Avatar
                 sx={{
                   width: 36,
@@ -117,7 +121,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             onClose={() => setAnchorEl(null)}
             transformOrigin={{ horizontal: 'right', vertical: 'top' }}
             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            slotProps={{ paper: { sx: { minWidth: 200, mt: 1, borderRadius: APP_BORDER_RADIUS } } }}
+            slotProps={{
+              paper: {
+                sx: { minWidth: 220, mt: 1, borderRadius: appRadius.lg, overflow: 'hidden' },
+              },
+            }}
           >
             <Box sx={{ px: 2, py: 1.5 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>

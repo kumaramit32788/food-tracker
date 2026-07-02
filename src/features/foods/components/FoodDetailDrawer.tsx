@@ -1,4 +1,4 @@
-import { APP_BORDER_RADIUS_SM } from '@/constants/shape.ts';
+import { appRadius } from '@/constants/shape.ts';
 import KitchenOutlinedIcon from '@mui/icons-material/KitchenOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
@@ -199,7 +199,7 @@ export function FoodDetailDrawer({
         <Box
           sx={{
             p: 2,
-            borderRadius: APP_BORDER_RADIUS_SM,
+            borderRadius: appRadius.sm,
             bgcolor: 'primary.main',
             color: 'primary.contrastText',
           }}

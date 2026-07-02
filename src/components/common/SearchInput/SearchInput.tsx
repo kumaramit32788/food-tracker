@@ -1,4 +1,4 @@
-import { APP_BORDER_RADIUS } from '@/constants/shape.ts';
+import { appRadius } from '@/constants/shape.ts';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import { IconButton, InputAdornment, TextField } from '@mui/material';
@@ -47,7 +47,7 @@ export function SearchInput({
             </InputAdornment>
           ) : undefined,
           sx: {
-            borderRadius: APP_BORDER_RADIUS,
+            borderRadius: appRadius.lg,
             bgcolor: 'action.hover',
             '& fieldset': { border: 'none' },
             '&:hover fieldset': { border: 'none' },

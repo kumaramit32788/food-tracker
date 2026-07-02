@@ -1,4 +1,4 @@
-import { APP_BORDER_RADIUS } from '@/constants/shape.ts';
+import { appRadius } from '@/constants/shape.ts';
 import { Box, Stack, Typography, useTheme } from '@mui/material';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import type { MacroNutrients } from '@/types/nutritionEngine.types.ts';
@@ -59,7 +59,7 @@ export function MacroPieChart({ macros, title = 'Macro split (by calories)' }: M
                   contentStyle={{
                     backgroundColor: theme.palette.background.paper,
                     border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: APP_BORDER_RADIUS,
+                    borderRadius: appRadius.lg,
                   }}
                 />
               </PieChart>
