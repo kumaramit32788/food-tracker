@@ -33,6 +33,15 @@ export const deviceRepository = {
     };
   },
 
+  async updateDeviceUserName(name: string): Promise<void> {
+    const record = await db.device.get(DEVICE_RECORD_ID);
+    if (!record) {
+      return;
+    }
+
+    await db.device.put({ ...record, name });
+  },
+
   async getProfile(): Promise<UserProfile | null> {
     const record = await db.profile.get(PROFILE_RECORD_ID);
 

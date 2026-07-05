@@ -124,6 +124,9 @@ const authSlice = createSlice({
       .addCase(saveUserProfile.fulfilled, (state, action) => {
         state.isLoading = false;
         state.profile = action.payload;
+        if (state.user) {
+          state.user.name = action.payload.name;
+        }
         state.error = null;
       })
       .addCase(saveUserProfile.rejected, (state, action) => {

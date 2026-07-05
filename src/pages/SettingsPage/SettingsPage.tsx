@@ -3,7 +3,6 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
-import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import {
   Alert,
   Box,
@@ -23,34 +22,18 @@ import {
 import { useState } from 'react';
 import { PrivacyNotice } from '@/components/legal';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { ProfileForm } from '@/features/auth/components/ProfileForm.tsx';
 import { useAuth } from '@/features/auth/hooks/useAuth.ts';
 import { useThemeMode } from '@/hooks/useThemeMode.ts';
 import { dataService } from '@/services/dataService.ts';
-import { calculateBmi, getBmiCategory } from '@/utils/bodyMetrics.ts';
-
-function ProfileRow({ label, value }: { label: string; value: string | number }) {
-  return (
-    <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between' }}>
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-        {value}
-      </Typography>
-    </Stack>
-  );
-}
 
 export function SettingsPage() {
-  const { user, profile, signOut } = useAuth();
+  const { signOut } = useAuth();
   const { isDark, toggle } = useThemeMode();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  const bmi =
-    profile?.weight && profile?.height ? calculateBmi(profile.weight, profile.height) : 0;
 
   const handleExport = async () => {
     setActionError(null);
@@ -81,10 +64,10 @@ export function SettingsPage() {
     <>
       <PageHeader
         title="Settings"
-        subtitle="Manage your profile and app preferences."
+        subtitle="Edit your profile, goals, and app preferences."
       />
 
-      <Stack spacing={3} sx={{ maxWidth: 640 }}>
+      <Stack spacing={3} sx={{ maxWidth: 720 }}>
         {actionError && (
           <Alert severity="error" onClose={() => setActionError(null)}>
             {actionError}
@@ -93,50 +76,10 @@ export function SettingsPage() {
 
         <Card>
           <CardContent>
-            <Stack direction="row" spacing={2} sx={{ mb: 2, alignItems: 'center' }}>
-              <Box
-                sx={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: appRadius.sm,
-                  display: 'grid',
-                  placeItems: 'center',
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                }}
-              >
-                <PersonOutlineOutlinedIcon />
-              </Box>
-              <Box>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  {user?.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Local device account
-                </Typography>
-              </Box>
-            </Stack>
-
-            {profile && (
-              <Stack spacing={1.5}>
-                <ProfileRow label="Age" value={profile.age} />
-                <ProfileRow label="Gender" value={profile.gender} />
-                <ProfileRow label="Height" value={`${profile.height} cm`} />
-                <ProfileRow label="Weight" value={`${profile.weight} kg`} />
-                {bmi > 0 && (
-                  <ProfileRow
-                    label="BMI (informational)"
-                    value={`${bmi} — ${getBmiCategory(bmi)}`}
-                  />
-                )}
-                <Divider sx={{ my: 0.5 }} />
-                <ProfileRow label="Daily calories" value={`${profile.calorieGoal} kcal`} />
-                <ProfileRow label="Protein goal" value={`${profile.proteinGoal} g`} />
-                <ProfileRow label="Carbs goal" value={`${profile.carbsGoal} g`} />
-                <ProfileRow label="Fat goal" value={`${profile.fatGoal} g`} />
-                <ProfileRow label="Fiber goal" value={`${profile.fiberGoal ?? 25} g`} />
-              </Stack>
-            )}
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+              Profile & goals
+            </Typography>
+            <ProfileForm variant="embedded" />
           </CardContent>
         </Card>
 

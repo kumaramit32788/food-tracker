@@ -12,7 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm, useWatch, type Resolver } from 'react-hook-form';
 import { MedicalDisclaimer, PrivacyNotice } from '@/components/legal';
 import { ACTIVITY_LEVELS, GENDERS, GOAL_TYPES } from '@/constants/auth.ts';
@@ -32,7 +32,35 @@ import {
 } from '@/utils/calculateCalorieGoal.ts';
 import { calculateBmi, getBmiCategory } from '@/utils/bodyMetrics.ts';
 
-export function ProfileForm() {
+interface ProfileFormProps {
+  /** `page` = full setup/update screen; `embedded` = inside Settings */
+  variant?: 'page' | 'embedded';
+}
+
+function buildDefaultValues(
+  profile: UserProfile | null | undefined,
+  userName: string | undefined,
+  hasConsent: boolean,
+): ProfileFormInput {
+  return {
+    name: profile?.name ?? userName ?? '',
+    age: profile?.age ?? 25,
+    gender: profile?.gender ?? 'male',
+    height: profile?.height ?? 170,
+    weight: profile?.weight ?? 70,
+    activityLevel: profile?.activityLevel ?? 'moderate',
+    goalType: profile?.goalType ?? 'maintain',
+    calorieGoal: profile?.calorieGoal ?? 2000,
+    proteinGoal: profile?.proteinGoal ?? 150,
+    carbsGoal: profile?.carbsGoal ?? 225,
+    fatGoal: profile?.fatGoal ?? 55,
+    fiberGoal: profile?.fiberGoal ?? 25,
+    acceptedDisclaimer: hasConsent,
+    acceptedPrivacy: hasConsent,
+  };
+}
+
+export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
   const {
     user,
     profile,
@@ -45,34 +73,44 @@ export function ProfileForm() {
   } = useAuth();
 
   const isDeviceSetup = !hasDeviceAccount;
+  const isEmbedded = variant === 'embedded';
   const hasConsent = Boolean(profile?.consentAcceptedAt);
 
   const {
     control,
     handleSubmit,
+    reset,
     setValue,
     formState: { errors },
   } = useForm<ProfileFormInput, unknown, ProfileFormValues>({
     resolver: zodResolver(
       isDeviceSetup ? profileSchema : profileUpdateSchema,
     ) as unknown as Resolver<ProfileFormInput, unknown, ProfileFormValues>,
-    defaultValues: {
-      name: profile?.name ?? user?.name ?? '',
-      age: profile?.age ?? 25,
-      gender: profile?.gender ?? 'male',
-      height: profile?.height ?? 170,
-      weight: profile?.weight ?? 70,
-      activityLevel: profile?.activityLevel ?? 'moderate',
-      goalType: profile?.goalType ?? 'maintain',
-      calorieGoal: profile?.calorieGoal ?? 2000,
-      proteinGoal: profile?.proteinGoal ?? 150,
-      carbsGoal: profile?.carbsGoal ?? 225,
-      fatGoal: profile?.fatGoal ?? 55,
-      fiberGoal: profile?.fiberGoal ?? 25,
-      acceptedDisclaimer: hasConsent,
-      acceptedPrivacy: hasConsent,
-    },
+    defaultValues: buildDefaultValues(profile, user?.name, hasConsent),
   });
+
+  useEffect(() => {
+    reset(buildDefaultValues(profile, user?.name, hasConsent));
+  }, [
+    profile?.name,
+    profile?.age,
+    profile?.gender,
+    profile?.height,
+    profile?.weight,
+    profile?.activityLevel,
+    profile?.goalType,
+    profile?.calorieGoal,
+    profile?.proteinGoal,
+    profile?.carbsGoal,
+    profile?.fatGoal,
+    profile?.fiberGoal,
+    user?.name,
+    hasConsent,
+    reset,
+    profile,
+  ]);
+
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const watchedFields = useWatch({
     control,
@@ -142,22 +180,33 @@ export function ProfileForm() {
       return;
     }
 
-    await saveProfile(profileData);
+    const saved = await saveProfile(profileData, { redirect: !isEmbedded });
+    if (saved && isEmbedded) {
+      setSaveSuccess(true);
+    }
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
       <Stack spacing={3}>
-        <Box>
-          <Typography variant="h5" gutterBottom>
-            {isDeviceSetup ? 'Set up this device' : 'Update your profile'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {isDeviceSetup
-              ? 'Create your profile to get started. Only one account per device.'
-              : 'Update your details and daily nutrition targets'}
-          </Typography>
-        </Box>
+        {!isEmbedded && (
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              {isDeviceSetup ? 'Set up this device' : 'Update your profile'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {isDeviceSetup
+                ? 'Create your profile to get started. Only one account per device.'
+                : 'Update your details and daily nutrition targets'}
+            </Typography>
+          </Box>
+        )}
+
+        {saveSuccess && (
+          <Alert severity="success" onClose={() => setSaveSuccess(false)}>
+            Profile saved successfully.
+          </Alert>
+        )}
 
         {error && (
           <Alert severity="error" onClose={dismissError}>
@@ -439,7 +488,9 @@ export function ProfileForm() {
               : 'Saving profile...'
             : isDeviceSetup
               ? 'Set Up Device'
-              : 'Save & Continue'}
+              : isEmbedded
+                ? 'Save changes'
+                : 'Save & Continue'}
         </Button>
       </Stack>
     </Box>

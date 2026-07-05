@@ -45,7 +45,9 @@ export const authService = {
   },
 
   async saveProfile(profile: UserProfile): Promise<UserProfile> {
-    return deviceRepository.saveProfile(profile);
+    const saved = await deviceRepository.saveProfile(profile);
+    await deviceRepository.updateDeviceUserName(profile.name);
+    return saved;
   },
 
   async getProfile(): Promise<UserProfile | null> {

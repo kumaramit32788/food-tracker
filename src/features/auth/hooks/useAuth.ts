@@ -51,12 +51,17 @@ export function useAuth() {
   );
 
   const saveProfile = useCallback(
-    async (profileData: UserProfile) => {
+    async (profileData: UserProfile, options?: { redirect?: boolean }) => {
       const result = await dispatch(saveUserProfile(profileData));
 
       if (saveUserProfile.fulfilled.match(result)) {
-        navigate(ROUTES.DASHBOARD, { replace: true });
+        if (options?.redirect !== false) {
+          navigate(ROUTES.DASHBOARD, { replace: true });
+        }
+        return true;
       }
+
+      return false;
     },
     [dispatch, navigate],
   );
