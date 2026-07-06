@@ -45,8 +45,11 @@ export function formatFirebaseAuthError(error: unknown): string {
   switch (code) {
     case 'auth/internal-error':
       return 'Google sign-in failed. If you use an ad blocker, allow apis.google.com and accounts.google.com for this site, then hard-refresh.';
-    case 'auth/unauthorized-domain':
-      return 'This domain is not authorized. Add it under Firebase Authentication → Settings → Authorized domains.';
+    case 'auth/unauthorized-domain': {
+      const host =
+        typeof window !== 'undefined' ? window.location.hostname : 'your-domain';
+      return `Domain "${host}" is not authorized. Firebase Console → Authentication → Settings → Authorized domains → Add domain → enter "${host}".`;
+    }
     case 'auth/operation-not-allowed':
       return 'Google sign-in is not enabled. Enable it in Firebase Authentication → Sign-in method.';
     case 'auth/popup-blocked':
