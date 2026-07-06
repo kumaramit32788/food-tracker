@@ -9,6 +9,11 @@ const formNumber = (build: (schema: z.ZodNumber) => z.ZodNumber) => {
     .transform((value) => value as z.infer<typeof numberSchema>);
 };
 
+const optionalFormNumber = (defaultValue = 0) =>
+  z
+    .union([z.number({ error: 'Enter a valid number' }).min(0), z.literal('')])
+    .transform((value) => (value === '' ? defaultValue : value));
+
 export const createFoodSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters'),
   category: z.enum(FOOD_CATEGORIES),
@@ -16,9 +21,9 @@ export const createFoodSchema = z.object({
   protein: formNumber((n) => n.min(0)),
   carbs: formNumber((n) => n.min(0)),
   fat: formNumber((n) => n.min(0)),
-  fiber: formNumber((n) => n.min(0)),
-  sugar: formNumber((n) => n.min(0)),
-  sodium: formNumber((n) => n.min(0)),
+  fiber: optionalFormNumber(0),
+  sugar: optionalFormNumber(0),
+  sodium: optionalFormNumber(0),
   servingAmount: formNumber((n) => n.positive('Serving amount must be greater than 0')),
   servingUnit: z.enum([
     'g',
@@ -52,10 +57,10 @@ export const DEFAULT_CREATE_FOOD_VALUES: CreateFoodFormInput = {
   protein: '',
   carbs: '',
   fat: '',
-  fiber: '',
-  sugar: '',
-  sodium: '',
-  servingAmount: '',
+  fiber: 0,
+  sugar: 0,
+  sodium: 0,
+  servingAmount: 100,
   servingUnit: 'g',
   isVegetarian: true,
 };

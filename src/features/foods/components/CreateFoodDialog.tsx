@@ -123,6 +123,7 @@ export function CreateFoodDialog({
   const [inputMode, setInputMode] = useState<InputMode>(defaultMode);
   const [ingredients, setIngredients] = useState<RecipeIngredientDraft[]>([]);
   const [ingredientError, setIngredientError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [isLoggingIngredients, setIsLoggingIngredients] = useState(false);
   const { logFood } = useDiary(logContext?.date ?? '');
   const { showFoodLogged, showItemsLogged } = useLogToast();
@@ -144,9 +145,12 @@ export function CreateFoodDialog({
   useEffect(() => {
     if (open) {
       reset({ ...DEFAULT_CREATE_FOOD_VALUES, ...initialValues });
-      setInputMode(logContext ? 'ingredients' : 'manual');
+      setInputMode(
+        initialValues?.name?.trim() ? 'manual' : logContext ? 'ingredients' : 'manual',
+      );
       setIngredients([]);
       setIngredientError(null);
+      setSubmitError(null);
     }
   }, [open, initialValues, reset, logContext]);
 
@@ -187,13 +191,19 @@ export function CreateFoodDialog({
     reset(DEFAULT_CREATE_FOOD_VALUES);
     setIngredients([]);
     setIngredientError(null);
+    setSubmitError(null);
     setInputMode(defaultMode);
     onClose();
   };
 
   const submitManual = handleSubmit(async (values) => {
-    await onSubmit(toCreateFoodInput(values));
-    handleClose();
+    setSubmitError(null);
+    try {
+      await onSubmit(toCreateFoodInput(values));
+      handleClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Failed to save food');
+    }
   });
 
   const logIngredients = async (saveAsFood: boolean) => {
@@ -263,7 +273,12 @@ export function CreateFoodDialog({
 
       handleClose();
     } catch (error) {
-      setIngredientError(error instanceof Error ? error.message : 'Failed to log ingredients');
+      const message = error instanceof Error ? error.message : 'Failed to log ingredients';
+      if (saveAsFood) {
+        setSubmitError(message);
+      } else {
+        setIngredientError(message);
+      }
     } finally {
       setIsLoggingIngredients(false);
     }
@@ -271,6 +286,7 @@ export function CreateFoodDialog({
 
   const saveIngredientsAsFood = handleSubmit(async (values) => {
     setIngredientError(null);
+    setSubmitError(null);
 
     if (ingredients.length === 0) {
       setIngredientError('Add at least one ingredient.');
@@ -283,15 +299,19 @@ export function CreateFoodDialog({
       return;
     }
 
-    await onSubmit(
-      toCreateFoodInputFromPreview(
-        values.name,
-        values.category,
-        values.isVegetarian,
-        preview,
-      ),
-    );
-    handleClose();
+    try {
+      await onSubmit(
+        toCreateFoodInputFromPreview(
+          values.name,
+          values.category,
+          values.isVegetarian,
+          preview,
+        ),
+      );
+      handleClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Failed to save food');
+    }
   });
 
   const busy = isSubmitting || isLoggingIngredients;
@@ -506,6 +526,7 @@ export function CreateFoodDialog({
           )}
 
           {ingredientError && <Alert severity="error">{ingredientError}</Alert>}
+          {submitError && <Alert severity="error">{submitError}</Alert>}
           {Object.keys(errors).length > 0 && inputMode === 'manual' && (
             <Alert severity="error">Please fix the highlighted fields.</Alert>
           )}

@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { FoodCategory } from '@/constants/foodCategories.ts';
 import { useFoods } from '@/features/foods/hooks/useFoods.ts';
-import { useDebouncedValue } from '@/hooks/useDebouncedValue.ts';
 import type { Food } from '@/types/food.types.ts';
 import { filterByDiet, type DietFilter } from '@/utils/dietFilter.ts';
 import { groupSearchResults, searchFoods } from '@/utils/searchFoods.ts';
@@ -20,7 +19,7 @@ export function useFoodBrowser() {
   const query = searchParams.get('q') ?? '';
   const [category, setCategory] = useState<FoodCategory | null>(null);
   const [dietFilter, setDietFilter] = useState<DietFilter>('all');
-  const debouncedQuery = useDebouncedValue(query);
+  const activeQuery = query.trim();
 
   const { foods, favorites, recentFoods, isLoading, ...foodActions } = useFoods();
 
@@ -39,7 +38,7 @@ export function useFoodBrowser() {
     );
   };
 
-  const mode: FoodBrowserMode = debouncedQuery ? 'search' : category ? 'category' : 'browse';
+  const mode: FoodBrowserMode = activeQuery ? 'search' : category ? 'category' : 'browse';
 
   const categoryCounts = useMemo(() => {
     const counts = new Map<FoodCategory, number>();
@@ -50,14 +49,14 @@ export function useFoodBrowser() {
   }, [foods]);
 
   const filteredFoods = useMemo(() => {
-    let results = searchFoods(foods, debouncedQuery, 200);
+    let results = searchFoods(foods, activeQuery, 200);
 
     if (category) {
       results = results.filter((food) => food.category === category);
     }
 
     return filterByDiet(results, dietFilter);
-  }, [foods, debouncedQuery, category, dietFilter]);
+  }, [foods, activeQuery, category, dietFilter]);
 
   const grouped = useMemo(() => groupSearchResults(filteredFoods), [filteredFoods]);
 
@@ -67,30 +66,30 @@ export function useFoodBrowser() {
   );
 
   const displayFavorites = useMemo(() => {
-    if (debouncedQuery) {
+    if (activeQuery) {
       return [];
     }
     const source = category || dietFilter !== 'all' ? grouped.favorites : favorites;
     return dietFilter !== 'all' && !category ? filterByDiet(source, dietFilter) : source;
-  }, [grouped.favorites, favorites, debouncedQuery, category, dietFilter]);
+  }, [grouped.favorites, favorites, activeQuery, category, dietFilter]);
 
   const displayRecent = useMemo(() => {
-    if (debouncedQuery) {
+    if (activeQuery) {
       return [];
     }
     const source = category ? grouped.recent : recentFoods;
     return filterByDiet(source, dietFilter);
-  }, [grouped.recent, recentFoods, debouncedQuery, category, dietFilter]);
+  }, [grouped.recent, recentFoods, activeQuery, category, dietFilter]);
 
   const displayOthers = useMemo(() => {
     if (mode === 'browse') {
       return browsePreview;
     }
-    if (debouncedQuery) {
+    if (activeQuery) {
       return filteredFoods;
     }
     return sortByName(grouped.others);
-  }, [mode, browsePreview, grouped.others, debouncedQuery, filteredFoods]);
+  }, [mode, browsePreview, grouped.others, activeQuery, filteredFoods]);
 
   const totalMatches = filteredFoods.length;
 
@@ -100,7 +99,7 @@ export function useFoodBrowser() {
     setQuery('');
   };
 
-  const hasActiveFilters = Boolean(debouncedQuery || category || dietFilter !== 'all');
+  const hasActiveFilters = Boolean(activeQuery || category || dietFilter !== 'all');
 
   return {
     query,

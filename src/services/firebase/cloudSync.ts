@@ -12,10 +12,16 @@ export const cloudSync = {
     await firestoreSyncService.pushProfile(uid, profile);
   },
 
-  afterDiaryChange(date: string) {
+  async afterDiaryChange(date: string) {
     const uid = getCurrentSyncUid();
     if (!uid) return;
-    scheduleDiarySync(uid, date);
+    await scheduleDiarySync(uid, date);
+  },
+
+  async pullLatest() {
+    const uid = getCurrentSyncUid();
+    if (!uid) return null;
+    return firestoreSyncService.pullUserData(uid, true);
   },
 
   async afterCustomFoodChange() {

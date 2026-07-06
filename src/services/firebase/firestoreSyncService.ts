@@ -14,7 +14,7 @@ import { getFirestoreDb } from '@/services/firebase/firebaseApp.ts';
 import { firestorePaths } from '@/services/firebase/firestorePaths.ts';
 import { communityFoodService } from '@/services/firebase/communityFoodService.ts';
 import { isPersonalCustomFood } from '@/utils/foodVisibility.ts';
-import { getDiaryMonthsToPull, shouldPullCollection } from '@/services/firebase/syncUtils.ts';
+import { getDiaryMonthsToPull, shouldPullCollection, stripUndefinedDeep } from '@/services/firebase/syncUtils.ts';
 import type {
   CustomFoodsBundle,
   DiaryMonthBundle,
@@ -38,8 +38,8 @@ const EMPTY_REMOTE_META: RemoteSyncMeta = {
   updatedAt: '',
 };
 
-let diaryPushTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingDiaryMonths = new Set<string>();
+let diaryPushChain: Promise<SyncPushStats> = Promise.resolve({ writesUsed: 0 });
 let activeUid: string | null = null;
 let sessionPullCompleted = false;
 
@@ -57,10 +57,7 @@ export const firestoreSyncService = {
     activeUid = uid;
     sessionPullCompleted = false;
     pendingDiaryMonths.clear();
-    if (diaryPushTimer) {
-      clearTimeout(diaryPushTimer);
-      diaryPushTimer = null;
-    }
+    diaryPushChain = Promise.resolve({ writesUsed: 0 });
   },
 
   async getLocalSyncMeta(uid: string): Promise<LocalSyncMeta | null> {
@@ -213,7 +210,10 @@ export const firestoreSyncService = {
     const ts = nowIso();
     const fs = getFirestoreDb();
 
-    await setDoc(doc(fs, firestorePaths.bundle.customFoods(uid)), { items, updatedAt: ts });
+    await setDoc(
+      doc(fs, firestorePaths.bundle.customFoods(uid)),
+      stripUndefinedDeep({ items, updatedAt: ts }),
+    );
     await setDoc(
       doc(fs, firestorePaths.syncMeta(uid)),
       { customFoodsUpdatedAt: ts, updatedAt: ts },
@@ -278,18 +278,20 @@ export const firestoreSyncService = {
     return { writesUsed: 2 };
   },
 
-  scheduleDiaryPush(uid: string, monthKey: string) {
+  queueDiaryPush(uid: string, monthKey: string): Promise<SyncPushStats> {
     pendingDiaryMonths.add(monthKey);
-    if (diaryPushTimer) clearTimeout(diaryPushTimer);
-    diaryPushTimer = setTimeout(() => {
-      void this.flushDiaryPush(uid);
-    }, 2000);
+    diaryPushChain = diaryPushChain
+      .then(() => this.flushDiaryPush(uid))
+      .catch((error) => {
+        console.warn('[sync] Diary push failed', error);
+        return { writesUsed: 0 };
+      });
+    return diaryPushChain;
   },
 
   async flushDiaryPush(uid: string): Promise<SyncPushStats> {
     const months = [...pendingDiaryMonths];
     pendingDiaryMonths.clear();
-    diaryPushTimer = null;
 
     if (months.length === 0) return { writesUsed: 0 };
 
@@ -311,12 +313,15 @@ export const firestoreSyncService = {
       const days = (await db.diaryDays.toArray()).filter((d) => dayIds.has(d.id));
 
       const ts = nowIso();
-      await setDoc(doc(fs, firestorePaths.bundle.diaryMonth(uid, monthKey)), {
-        monthKey,
-        days,
-        entries,
-        updatedAt: ts,
-      } satisfies DiaryMonthBundle);
+      await setDoc(
+        doc(fs, firestorePaths.bundle.diaryMonth(uid, monthKey)),
+        stripUndefinedDeep({
+          monthKey,
+          days,
+          entries,
+          updatedAt: ts,
+        } satisfies DiaryMonthBundle),
+      );
       diaryMonths[monthKey] = ts;
       writesUsed += 1;
     }
@@ -454,7 +459,7 @@ export const firestoreSyncService = {
   },
 };
 
-export function scheduleDiarySync(uid: string, date: string) {
+export function scheduleDiarySync(uid: string, date: string): Promise<SyncPushStats> {
   const monthKey = date.slice(0, 7);
-  firestoreSyncService.scheduleDiaryPush(uid, monthKey);
+  return firestoreSyncService.queueDiaryPush(uid, monthKey);
 }

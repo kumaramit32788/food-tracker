@@ -67,7 +67,7 @@ export const diaryService = {
         sodium: roundSodium(food, quantityInBase),
       }),
     });
-    cloudSync.afterDiaryChange(input.date);
+    await cloudSync.afterDiaryChange(input.date);
     return entry;
   },
 
@@ -101,7 +101,7 @@ export const diaryService = {
         sodium: round1(recipe.nutritionPerServing.sodium * multiplier),
       }),
     });
-    cloudSync.afterDiaryChange(input.date);
+    await cloudSync.afterDiaryChange(input.date);
     return entry;
   },
 
@@ -109,7 +109,7 @@ export const diaryService = {
     const entry = await db.diaryEntries.get(id);
     await diaryRepository.removeEntry(id);
     if (entry?.date) {
-      cloudSync.afterDiaryChange(entry.date);
+      await cloudSync.afterDiaryChange(entry.date);
     }
   },
 
@@ -117,7 +117,7 @@ export const diaryService = {
     const day = await diaryRepository.getOrCreateDay(date);
     const updated = { ...day, waterMl: Math.max(0, waterMl) };
     await db.diaryDays.put(updated);
-    cloudSync.afterDiaryChange(date);
+    await cloudSync.afterDiaryChange(date);
     return updated;
   },
 

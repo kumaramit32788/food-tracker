@@ -8,6 +8,7 @@ import type { MealType } from '@/constants/mealTypes.ts';
 interface LogToastContextValue {
   showFoodLogged: (foodName: string, mealType?: MealType) => void;
   showItemsLogged: (count: number, mealType?: MealType) => void;
+  showFoodSaved: (foodName: string) => void;
 }
 
 const LogToastContext = createContext<LogToastContextValue | null>(null);
@@ -37,9 +38,16 @@ export function LogToastProvider({ children }: { children: ReactNode }) {
     [show],
   );
 
+  const showFoodSaved = useCallback(
+    (foodName: string) => {
+      show(`Successfully added ${foodName}`);
+    },
+    [show],
+  );
+
   const value = useMemo(
-    () => ({ showFoodLogged, showItemsLogged }),
-    [showFoodLogged, showItemsLogged],
+    () => ({ showFoodLogged, showItemsLogged, showFoodSaved }),
+    [showFoodLogged, showItemsLogged, showFoodSaved],
   );
 
   return (

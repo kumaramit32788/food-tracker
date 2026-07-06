@@ -53,7 +53,7 @@ export const authService = {
     const firebaseUser = getFirebaseAuth().currentUser;
     if (!firebaseUser) return null;
 
-    return buildSession(firebaseUser);
+    return buildSession(firebaseUser, true);
   },
 
   async refreshRole(): Promise<UserRole | null> {

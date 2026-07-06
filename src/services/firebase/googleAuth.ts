@@ -48,6 +48,11 @@ export function formatFirebaseAuthError(error: unknown): string {
     case 'auth/unauthorized-domain': {
       const host =
         typeof window !== 'undefined' ? window.location.hostname : 'your-domain';
+      const isVercelPreview =
+        host.endsWith('.vercel.app') && !host.startsWith('food-tracker-red.');
+      if (isVercelPreview) {
+        return `Preview URL "${host}" is not authorized. Use your production app at food-tracker-red.vercel.app, or add this exact domain in Firebase → Authentication → Settings → Authorized domains.`;
+      }
       return `Domain "${host}" is not authorized. Firebase Console → Authentication → Settings → Authorized domains → Add domain → enter "${host}".`;
     }
     case 'auth/operation-not-allowed':

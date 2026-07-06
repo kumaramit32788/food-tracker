@@ -65,7 +65,7 @@ export function FoodsPage() {
   } = useFoodBrowser();
 
   const { logFood } = useDiary(logDate);
-  const { showFoodLogged } = useLogToast();
+  const { showFoodLogged, showFoodSaved } = useLogToast();
 
   const [selectedFoodId, setSelectedFoodId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -81,8 +81,12 @@ export function FoodsPage() {
   }, []);
 
   const saveFoodOnly = useCallback(
-    async (input: CreateFoodInput) => createFood(input) as Promise<Food>,
-    [createFood],
+    async (input: CreateFoodInput) => {
+      const food = (await createFood(input)) as Food;
+      showFoodSaved(food.name);
+      return food;
+    },
+    [createFood, showFoodSaved],
   );
 
   const handleCreateFood = useCallback(
@@ -101,10 +105,12 @@ export function FoodsPage() {
         return food;
       }
 
+      showFoodSaved(food.name);
+      setQuery('');
       setSelectedFoodId(food.id);
       return food;
     },
-    [createFood, diaryMealType, logDate, logFood, navigate],
+    [createFood, diaryMealType, logDate, logFood, navigate, setQuery, showFoodLogged, showFoodSaved],
   );
 
   const selectedFood = selectedFoodId ? getFoodById(selectedFoodId) : null;
@@ -152,10 +158,12 @@ export function FoodsPage() {
       : undefined;
 
   const showEmptyState =
-    hasActiveFilters &&
-    displayFavorites.length === 0 &&
-    displayRecent.length === 0 &&
-    displayOthers.length === 0;
+    isSearchWithNoResults ||
+    (hasActiveFilters &&
+      !isSearchWithNoResults &&
+      displayFavorites.length === 0 &&
+      displayRecent.length === 0 &&
+      displayOthers.length === 0);
 
   return (
     <>

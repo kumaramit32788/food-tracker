@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { AuthProvider } from '@/app/providers/AuthProvider.tsx';
+import { CloudSyncProvider } from '@/app/providers/CloudSyncProvider.tsx';
 import { DatabaseProvider } from '@/app/providers/DatabaseProvider.tsx';
 import { LogToastProvider } from '@/components/common/LogToast';
 import { persistor, store } from '@/app/store/index.ts';
@@ -45,11 +46,13 @@ export function AppProviders({ children }: AppProvidersProps) {
         <ThemedApp>
           <DatabaseProvider>
             <AuthProvider>
-              <LogToastProvider>
-                <PersistGate loading={<LoadingScreen message="Restoring your session..." />} persistor={persistor}>
-                  {children}
-                </PersistGate>
-              </LogToastProvider>
+              <CloudSyncProvider>
+                <LogToastProvider>
+                  <PersistGate loading={<LoadingScreen message="Restoring your session..." />} persistor={persistor}>
+                    {children}
+                  </PersistGate>
+                </LogToastProvider>
+              </CloudSyncProvider>
             </AuthProvider>
           </DatabaseProvider>
         </ThemedApp>
