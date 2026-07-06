@@ -8,7 +8,11 @@ interface GuestRouteProps {
 }
 
 export function GuestRoute({ children }: GuestRouteProps) {
-  const { isAuthenticated, profile } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, isAuthReady, profile } = useAppSelector((state) => state.auth);
+
+  if (!isAuthReady) {
+    return null;
+  }
 
   if (isAuthenticated) {
     return <Navigate to={profile ? ROUTES.DASHBOARD : ROUTES.PROFILE} replace />;

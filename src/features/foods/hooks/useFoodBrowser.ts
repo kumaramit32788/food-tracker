@@ -4,6 +4,7 @@ import type { FoodCategory } from '@/constants/foodCategories.ts';
 import { useFoods } from '@/features/foods/hooks/useFoods.ts';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue.ts';
 import type { Food } from '@/types/food.types.ts';
+import { filterByDiet, type DietFilter } from '@/utils/dietFilter.ts';
 import { groupSearchResults, searchFoods } from '@/utils/searchFoods.ts';
 
 const BROWSE_PREVIEW_LIMIT = 48;
@@ -18,7 +19,7 @@ export function useFoodBrowser() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') ?? '';
   const [category, setCategory] = useState<FoodCategory | null>(null);
-  const [vegOnly, setVegOnly] = useState(false);
+  const [dietFilter, setDietFilter] = useState<DietFilter>('all');
   const debouncedQuery = useDebouncedValue(query);
 
   const { foods, favorites, recentFoods, isLoading, ...foodActions } = useFoods();
@@ -55,38 +56,31 @@ export function useFoodBrowser() {
       results = results.filter((food) => food.category === category);
     }
 
-    if (vegOnly) {
-      results = results.filter((food) => food.isVegetarian);
-    }
-
-    return results;
-  }, [foods, debouncedQuery, category, vegOnly]);
+    return filterByDiet(results, dietFilter);
+  }, [foods, debouncedQuery, category, dietFilter]);
 
   const grouped = useMemo(() => groupSearchResults(filteredFoods), [filteredFoods]);
 
   const browsePreview = useMemo(
-    () => sortByName(foods.filter((food) => !vegOnly || food.isVegetarian)).slice(0, BROWSE_PREVIEW_LIMIT),
-    [foods, vegOnly],
+    () => sortByName(filterByDiet(foods, dietFilter)).slice(0, BROWSE_PREVIEW_LIMIT),
+    [foods, dietFilter],
   );
 
   const displayFavorites = useMemo(() => {
     if (debouncedQuery) {
       return [];
     }
-    const source = category || vegOnly ? grouped.favorites : favorites;
-    return vegOnly && !category
-      ? source.filter((food) => food.isVegetarian)
-      : source;
-  }, [grouped.favorites, favorites, debouncedQuery, category, vegOnly]);
+    const source = category || dietFilter !== 'all' ? grouped.favorites : favorites;
+    return dietFilter !== 'all' && !category ? filterByDiet(source, dietFilter) : source;
+  }, [grouped.favorites, favorites, debouncedQuery, category, dietFilter]);
 
   const displayRecent = useMemo(() => {
     if (debouncedQuery) {
       return [];
     }
     const source = category ? grouped.recent : recentFoods;
-    const filtered = vegOnly ? source.filter((food) => food.isVegetarian) : source;
-    return filtered;
-  }, [grouped.recent, recentFoods, debouncedQuery, category, vegOnly]);
+    return filterByDiet(source, dietFilter);
+  }, [grouped.recent, recentFoods, debouncedQuery, category, dietFilter]);
 
   const displayOthers = useMemo(() => {
     if (mode === 'browse') {
@@ -102,19 +96,19 @@ export function useFoodBrowser() {
 
   const clearFilters = () => {
     setCategory(null);
-    setVegOnly(false);
+    setDietFilter('all');
     setQuery('');
   };
 
-  const hasActiveFilters = Boolean(debouncedQuery || category || vegOnly);
+  const hasActiveFilters = Boolean(debouncedQuery || category || dietFilter !== 'all');
 
   return {
     query,
     setQuery,
     category,
     setCategory,
-    vegOnly,
-    setVegOnly,
+    dietFilter,
+    setDietFilter,
     mode,
     isLoading,
     foods,

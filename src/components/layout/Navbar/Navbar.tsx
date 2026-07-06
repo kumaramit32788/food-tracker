@@ -3,13 +3,10 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import {
   AppBar,
-  Avatar,
-  Badge,
   Box,
   IconButton,
   Menu,
@@ -22,6 +19,7 @@ import {
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SearchInput } from '@/components/common/SearchInput';
+import { UserAvatar } from '@/components/common/UserAvatar';
 import { NAVBAR_HEIGHT } from '@/constants/navigation.ts';
 import { ROUTES } from '@/constants/routes.ts';
 import { useAuth } from '@/features/auth/hooks/useAuth.ts';
@@ -31,19 +29,9 @@ interface NavbarProps {
   onMenuClick: () => void;
 }
 
-function getInitials(name?: string) {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-}
-
 export function Navbar({ onMenuClick }: NavbarProps) {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isSigningOut } = useAuth();
   const { isDark, toggle } = useThemeMode();
   const [search, setSearch] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -57,41 +45,35 @@ export function Navbar({ onMenuClick }: NavbarProps) {
 
   return (
     <AppBar position="sticky" color="inherit" sx={{ height: NAVBAR_HEIGHT }}>
-      <Toolbar sx={{ gap: 2, minHeight: `${NAVBAR_HEIGHT}px !important` }}>
+      <Toolbar sx={{ gap: 1.5, minHeight: `${NAVBAR_HEIGHT}px !important` }}>
         <IconButton
           edge="start"
           onClick={onMenuClick}
-          sx={{ display: { md: 'none' } }}
+          sx={{ display: { md: 'none' }, mr: 0.5 }}
           aria-label="Open navigation"
         >
           <MenuIcon />
         </IconButton>
 
-        <Box
-          component="form"
-          onSubmit={handleSearchSubmit}
-          sx={{ flex: 1, maxWidth: { md: 480, lg: 560 } }}
-        >
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="Search rice, dal, paneer, recipes..."
-            fullWidth
-          />
-        </Box>
+        <Box sx={{ flex: 1 }} />
 
         <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+          <Box
+            component="form"
+            onSubmit={handleSearchSubmit}
+            sx={{ width: { xs: 140, sm: 220, md: 300, lg: 360 } }}
+          >
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Search rice, dal, paneer..."
+              fullWidth
+            />
+          </Box>
+
           <Tooltip title={isDark ? 'Light mode' : 'Dark mode'}>
             <IconButton onClick={toggle} aria-label="Toggle theme">
               {isDark ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Notifications">
-            <IconButton aria-label="Notifications" disabled>
-              <Badge badgeContent={0} color="primary">
-                <NotificationsNoneOutlinedIcon />
-              </Badge>
             </IconButton>
           </Tooltip>
 
@@ -101,17 +83,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
               aria-label="Account menu"
               sx={{ borderRadius: '50%' }}
             >
-              <Avatar
-                sx={{
-                  width: 36,
-                  height: 36,
-                  bgcolor: 'primary.main',
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                }}
-              >
-                {getInitials(user?.name)}
-              </Avatar>
+              <UserAvatar
+                name={user?.name}
+                photoURL={user?.photoURL}
+                sx={{ width: 36, height: 36, fontSize: '0.9rem' }}
+              />
             </IconButton>
           </Tooltip>
 
@@ -128,12 +104,21 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             }}
           >
             <Box sx={{ px: 2, py: 1.5 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                {user?.name}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Local account
-              </Typography>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                <UserAvatar
+                  name={user?.name}
+                  photoURL={user?.photoURL}
+                  sx={{ width: 40, height: 40, fontSize: '0.85rem' }}
+                />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }} noWrap>
+                    {user?.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {user?.email ?? 'Google account'}
+                  </Typography>
+                </Box>
+              </Stack>
             </Box>
             <MenuItem
               onClick={() => {
@@ -156,11 +141,12 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             <MenuItem
               onClick={() => {
                 setAnchorEl(null);
-                signOut();
+                void signOut();
               }}
+              disabled={isSigningOut}
             >
               <LogoutOutlinedIcon fontSize="small" sx={{ mr: 1.5 }} />
-              Sign out
+              {isSigningOut ? 'Signing out…' : 'Sign out'}
             </MenuItem>
           </Menu>
         </Stack>

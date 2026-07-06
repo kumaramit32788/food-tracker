@@ -1,4 +1,5 @@
 import { foodRepository } from '@/services/db/repositories/foodRepository.ts';
+import { cloudSync } from '@/services/firebase/cloudSync.ts';
 import { recipeRepository } from '@/services/db/repositories/recipeRepository.ts';
 import type { CreateRecipeInput, Recipe, RecipeIngredient } from '@/types/recipe.types.ts';
 import type { Food } from '@/types/food.types.ts';
@@ -88,14 +89,19 @@ export const recipeService = {
     const items = await resolveIngredients(input.ingredients);
     const nutrition = calculateRecipeNutrition(items, input.servings);
     const recipe = buildRecipeRecord(input, nutrition);
-    return recipeRepository.create(recipe);
+    const created = await recipeRepository.create(recipe);
+    await cloudSync.afterRecipeChange();
+    return created;
   },
 
   async deleteRecipe(id: string): Promise<void> {
     await recipeRepository.delete(id);
+    await cloudSync.afterRecipeChange();
   },
 
   async toggleFavorite(id: string): Promise<Recipe> {
-    return recipeRepository.toggleFavorite(id);
+    const recipe = await recipeRepository.toggleFavorite(id);
+    await cloudSync.afterRecipeChange();
+    return recipe;
   },
 };

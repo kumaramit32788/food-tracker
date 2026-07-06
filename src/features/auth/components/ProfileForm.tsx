@@ -15,6 +15,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Controller, useForm, useWatch, type Resolver } from 'react-hook-form';
 import { MedicalDisclaimer, PrivacyNotice } from '@/components/legal';
+import { UserAvatar } from '@/components/common/UserAvatar';
 import { ACTIVITY_LEVELS, GENDERS, GOAL_TYPES } from '@/constants/auth.ts';
 import { useAuth } from '@/features/auth/hooks/useAuth.ts';
 import {
@@ -24,7 +25,7 @@ import {
   type ProfileFormValues,
 } from '@/features/auth/validation/profileSchema.ts';
 import { bindNumberField } from '@/utils/bindNumberField.ts';
-import type { UserProfile } from '@/types/auth.types.ts';
+import type { ActivityLevel, Gender, GoalType, UserProfile } from '@/types/auth.types.ts';
 import {
   calculateCalorieGoal,
   calculateFiberGoal,
@@ -37,44 +38,56 @@ interface ProfileFormProps {
   variant?: 'page' | 'embedded';
 }
 
+const EMPTY_PROFILE_FORM: ProfileFormInput = {
+  name: '',
+  age: '',
+  gender: '',
+  height: '',
+  weight: '',
+  activityLevel: '',
+  goalType: '',
+  calorieGoal: '',
+  proteinGoal: '',
+  carbsGoal: '',
+  fatGoal: '',
+  fiberGoal: '',
+  acceptedDisclaimer: false,
+  acceptedPrivacy: false,
+};
+
 function buildDefaultValues(
   profile: UserProfile | null | undefined,
-  userName: string | undefined,
-  hasConsent: boolean,
+  isFirstSetup: boolean,
 ): ProfileFormInput {
+  if (isFirstSetup || !profile) {
+    return EMPTY_PROFILE_FORM;
+  }
+
+  const hasConsent = Boolean(profile.consentAcceptedAt);
+
   return {
-    name: profile?.name ?? userName ?? '',
-    age: profile?.age ?? 25,
-    gender: profile?.gender ?? 'male',
-    height: profile?.height ?? 170,
-    weight: profile?.weight ?? 70,
-    activityLevel: profile?.activityLevel ?? 'moderate',
-    goalType: profile?.goalType ?? 'maintain',
-    calorieGoal: profile?.calorieGoal ?? 2000,
-    proteinGoal: profile?.proteinGoal ?? 150,
-    carbsGoal: profile?.carbsGoal ?? 225,
-    fatGoal: profile?.fatGoal ?? 55,
-    fiberGoal: profile?.fiberGoal ?? 25,
+    name: profile.name,
+    age: profile.age,
+    gender: profile.gender,
+    height: profile.height,
+    weight: profile.weight,
+    activityLevel: profile.activityLevel,
+    goalType: profile.goalType,
+    calorieGoal: profile.calorieGoal,
+    proteinGoal: profile.proteinGoal,
+    carbsGoal: profile.carbsGoal,
+    fatGoal: profile.fatGoal,
+    fiberGoal: profile.fiberGoal,
     acceptedDisclaimer: hasConsent,
     acceptedPrivacy: hasConsent,
   };
 }
 
 export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
-  const {
-    user,
-    profile,
-    hasDeviceAccount,
-    createAccount,
-    saveProfile,
-    isLoading,
-    error,
-    dismissError,
-  } = useAuth();
+  const { user, profile, saveProfile, isLoading, error, dismissError } = useAuth();
 
-  const isDeviceSetup = !hasDeviceAccount;
+  const isFirstSetup = !profile;
   const isEmbedded = variant === 'embedded';
-  const hasConsent = Boolean(profile?.consentAcceptedAt);
 
   const {
     control,
@@ -84,13 +97,13 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
     formState: { errors },
   } = useForm<ProfileFormInput, unknown, ProfileFormValues>({
     resolver: zodResolver(
-      isDeviceSetup ? profileSchema : profileUpdateSchema,
+      isFirstSetup ? profileSchema : profileUpdateSchema,
     ) as unknown as Resolver<ProfileFormInput, unknown, ProfileFormValues>,
-    defaultValues: buildDefaultValues(profile, user?.name, hasConsent),
+    defaultValues: buildDefaultValues(profile, isFirstSetup),
   });
 
   useEffect(() => {
-    reset(buildDefaultValues(profile, user?.name, hasConsent));
+    reset(buildDefaultValues(profile, isFirstSetup));
   }, [
     profile?.name,
     profile?.age,
@@ -104,8 +117,8 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
     profile?.carbsGoal,
     profile?.fatGoal,
     profile?.fiberGoal,
-    user?.name,
-    hasConsent,
+    profile?.consentAcceptedAt,
+    isFirstSetup,
     reset,
     profile,
   ]);
@@ -124,9 +137,9 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
       age === '' ||
       height === '' ||
       weight === '' ||
-      !gender ||
-      !activityLevel ||
-      !goalType
+      gender === '' ||
+      activityLevel === '' ||
+      goalType === ''
     ) {
       return;
     }
@@ -135,9 +148,9 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
       Number(weight),
       Number(height),
       Number(age),
-      gender,
-      activityLevel,
-      goalType,
+      gender as Gender,
+      activityLevel as ActivityLevel,
+      goalType as GoalType,
     );
     const macros = calculateMacroGoals(calorieGoal);
     const fiberGoal = calculateFiberGoal(calorieGoal);
@@ -157,11 +170,11 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
     const profileData: UserProfile = {
       name: values.name,
       age: values.age,
-      gender: values.gender,
+      gender: values.gender as Gender,
       height: values.height,
       weight: values.weight,
-      activityLevel: values.activityLevel,
-      goalType: values.goalType,
+      activityLevel: values.activityLevel as ActivityLevel,
+      goalType: values.goalType as GoalType,
       calorieGoal: values.calorieGoal,
       proteinGoal: values.proteinGoal,
       carbsGoal: values.carbsGoal,
@@ -175,11 +188,6 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
           : profile?.consentAcceptedAt,
     };
 
-    if (isDeviceSetup) {
-      await createAccount(profileData);
-      return;
-    }
-
     const saved = await saveProfile(profileData, { redirect: !isEmbedded });
     if (saved && isEmbedded) {
       setSaveSuccess(true);
@@ -192,12 +200,12 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
         {!isEmbedded && (
           <Box>
             <Typography variant="h5" gutterBottom>
-              {isDeviceSetup ? 'Set up this device' : 'Update your profile'}
+              {isFirstSetup ? 'Complete your profile' : 'Update your profile'}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {isDeviceSetup
-                ? 'Create your profile to get started. Only one account per device.'
-                : 'Update your details and daily nutrition targets'}
+            {isFirstSetup
+              ? 'Tell us about yourself to calculate your daily nutrition targets.'
+              : 'Update your details and daily nutrition targets'}
             </Typography>
           </Box>
         )}
@@ -214,7 +222,7 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
           </Alert>
         )}
 
-        {isDeviceSetup && (
+        {isFirstSetup && (
           <Stack spacing={2}>
             <MedicalDisclaimer />
             <PrivacyNotice />
@@ -234,7 +242,7 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
               render={({ field }) => (
                 <FormControlLabel
                   control={<Checkbox checked={field.value} onChange={field.onChange} />}
-                  label="I agree to the local data processing described in the privacy notice"
+                  label="I agree to the data processing described in the privacy notice"
                 />
               )}
             />
@@ -243,6 +251,26 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
                 {errors.acceptedDisclaimer?.message ?? errors.acceptedPrivacy?.message}
               </Typography>
             )}
+          </Stack>
+        )}
+
+        {user && (
+          <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+            <UserAvatar
+              name={user.name}
+              photoURL={user.photoURL}
+              sx={{ width: 56, height: 56, fontSize: '1.1rem' }}
+            />
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                {user.name}
+              </Typography>
+              {user.email && (
+                <Typography variant="body2" color="text.secondary">
+                  {user.email}
+                </Typography>
+              )}
+            </Box>
           </Stack>
         )}
 
@@ -287,9 +315,14 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
                   {...field}
                   select
                   label="Gender"
+                  value={field.value ?? ''}
                   error={Boolean(errors.gender)}
                   helperText={errors.gender?.message}
+                  slotProps={{ select: { displayEmpty: true } }}
                 >
+                  <MenuItem value="" disabled>
+                    Select gender
+                  </MenuItem>
                   {GENDERS.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
@@ -350,9 +383,14 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
                   {...field}
                   select
                   label="Activity Level"
+                  value={field.value ?? ''}
                   error={Boolean(errors.activityLevel)}
                   helperText={errors.activityLevel?.message}
+                  slotProps={{ select: { displayEmpty: true } }}
                 >
+                  <MenuItem value="" disabled>
+                    Select activity level
+                  </MenuItem>
                   {ACTIVITY_LEVELS.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
@@ -372,9 +410,14 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
                   {...field}
                   select
                   label="Goal"
+                  value={field.value ?? ''}
                   error={Boolean(errors.goalType)}
                   helperText={errors.goalType?.message}
+                  slotProps={{ select: { displayEmpty: true } }}
                 >
+                  <MenuItem value="" disabled>
+                    Select goal
+                  </MenuItem>
                   {GOAL_TYPES.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
@@ -483,11 +526,11 @@ export function ProfileForm({ variant = 'page' }: ProfileFormProps) {
 
         <Button type="submit" variant="contained" size="large" disabled={isLoading}>
           {isLoading
-            ? isDeviceSetup
-              ? 'Setting up device...'
+            ? isFirstSetup
+              ? 'Saving profile...'
               : 'Saving profile...'
-            : isDeviceSetup
-              ? 'Set Up Device'
+            : isFirstSetup
+              ? 'Save & Continue'
               : isEmbedded
                 ? 'Save changes'
                 : 'Save & Continue'}

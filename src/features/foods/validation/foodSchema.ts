@@ -45,17 +45,17 @@ export const createFoodSchema = z.object({
 export type CreateFoodFormValues = z.infer<typeof createFoodSchema>;
 export type CreateFoodFormInput = z.input<typeof createFoodSchema>;
 
-export const DEFAULT_CREATE_FOOD_VALUES: CreateFoodFormValues = {
+export const DEFAULT_CREATE_FOOD_VALUES: CreateFoodFormInput = {
   name: '',
   category: 'Other',
-  calories: 0,
-  protein: 0,
-  carbs: 0,
-  fat: 0,
-  fiber: 0,
-  sugar: 0,
-  sodium: 0,
-  servingAmount: 100,
+  calories: '',
+  protein: '',
+  carbs: '',
+  fat: '',
+  fiber: '',
+  sugar: '',
+  sodium: '',
+  servingAmount: '',
   servingUnit: 'g',
   isVegetarian: true,
 };

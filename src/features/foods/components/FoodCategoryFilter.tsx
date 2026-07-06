@@ -1,36 +1,50 @@
 import { Box, Chip, Stack, Typography } from '@mui/material';
 import type { FoodCategory } from '@/constants/foodCategories.ts';
 import { FOOD_CATEGORIES } from '@/constants/foodCategories.ts';
+import type { DietFilter } from '@/utils/dietFilter.ts';
 
 interface FoodCategoryFilterProps {
   selectedCategory: FoodCategory | null;
   categoryCounts: Map<FoodCategory, number>;
-  vegOnly: boolean;
+  dietFilter: DietFilter;
   onCategoryChange: (category: FoodCategory | null) => void;
-  onVegOnlyChange: (value: boolean) => void;
+  onDietFilterChange: (value: DietFilter) => void;
 }
 
 export function FoodCategoryFilter({
   selectedCategory,
   categoryCounts,
-  vegOnly,
+  dietFilter,
   onCategoryChange,
-  onVegOnlyChange,
+  onDietFilterChange,
 }: FoodCategoryFilterProps) {
   return (
     <Box sx={{ mb: 3 }}>
-      <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+      <Stack
+        direction="row"
+        sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1.5, gap: 1, flexWrap: 'wrap' }}
+      >
         <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 0.6 }}>
           CATEGORIES
         </Typography>
-        <Chip
-          label="Veg only"
-          size="small"
-          color={vegOnly ? 'success' : 'default'}
-          variant={vegOnly ? 'filled' : 'outlined'}
-          onClick={() => onVegOnlyChange(!vegOnly)}
-          sx={{ cursor: 'pointer' }}
-        />
+        <Stack direction="row" spacing={1}>
+          <Chip
+            label="Veg only"
+            size="small"
+            color={dietFilter === 'veg' ? 'success' : 'default'}
+            variant={dietFilter === 'veg' ? 'filled' : 'outlined'}
+            onClick={() => onDietFilterChange(dietFilter === 'veg' ? 'all' : 'veg')}
+            sx={{ cursor: 'pointer' }}
+          />
+          <Chip
+            label="Non-veg only"
+            size="small"
+            color={dietFilter === 'nonVeg' ? 'warning' : 'default'}
+            variant={dietFilter === 'nonVeg' ? 'filled' : 'outlined'}
+            onClick={() => onDietFilterChange(dietFilter === 'nonVeg' ? 'all' : 'nonVeg')}
+            sx={{ cursor: 'pointer' }}
+          />
+        </Stack>
       </Stack>
 
       <Box

@@ -23,12 +23,14 @@ import { RecipeNutritionSummary } from '@/features/recipe/components/RecipeNutri
 import { useRecipePreview, useRecipes } from '@/features/recipe/hooks/useRecipes.ts';
 import {
   recipeSchema,
+  type RecipeFormInput,
   type RecipeFormValues,
 } from '@/features/recipe/validation/recipeSchema.ts';
 import { useFoods } from '@/features/foods/hooks/useFoods.ts';
 import type { RecipeIngredientDraft } from '@/types/recipe.types.ts';
 import type { Food } from '@/types/food.types.ts';
 import type { UnitType } from '@/types/unit.types.ts';
+import { bindNumberField, coerceNumberValue, isPositiveNumber } from '@/utils/bindNumberField.ts';
 
 export function RecipeBuilder() {
   const { createRecipe, isCreating } = useRecipes();
@@ -43,28 +45,31 @@ export function RecipeBuilder() {
     watch,
     reset,
     formState: { errors },
-  } = useForm<RecipeFormValues>({
+  } = useForm<RecipeFormInput, unknown, RecipeFormValues>({
     resolver: zodResolver(recipeSchema),
     defaultValues: {
       name: '',
       category: 'Custom',
-      servings: 2,
+      servings: '',
     },
   });
 
   const servings = watch('servings');
+  const servingsCount = coerceNumberValue(servings, 1);
 
   const ingredientInputs = useMemo(
     () =>
-      ingredients.map((item) => ({
-        foodId: item.foodId,
-        quantity: item.quantity,
-        unit: item.unit,
-      })),
+      ingredients
+        .filter((item) => isPositiveNumber(item.quantity))
+        .map((item) => ({
+          foodId: item.foodId,
+          quantity: item.quantity as number,
+          unit: item.unit,
+        })),
     [ingredients],
   );
 
-  const previewQuery = useRecipePreview(ingredientInputs, servings, ingredients.length > 0);
+  const previewQuery = useRecipePreview(ingredientInputs, servingsCount, ingredients.length > 0);
 
   const handleAddIngredient = (food: Food, quantity: number, unit: UnitType) => {
     setIngredients((prev) => [
@@ -147,10 +152,8 @@ export function RecipeBuilder() {
                 control={control}
                 render={({ field }) => (
                   <TextField
-                    {...field}
-                    type="number"
+                    {...bindNumberField(field)}
                     label="Servings"
-                    onChange={(event) => field.onChange(Number(event.target.value))}
                     error={Boolean(errors.servings)}
                     helperText={errors.servings?.message}
                     slotProps={{ htmlInput: { min: 1 } }}
@@ -224,7 +227,7 @@ export function RecipeBuilder() {
 
           <RecipeNutritionSummary
             nutrition={previewQuery.data}
-            servings={servings}
+            servings={servingsCount}
             isLoading={previewQuery.isFetching}
           />
 

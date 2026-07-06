@@ -4,7 +4,9 @@ import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
+import { AuthProvider } from '@/app/providers/AuthProvider.tsx';
 import { DatabaseProvider } from '@/app/providers/DatabaseProvider.tsx';
+import { LogToastProvider } from '@/components/common/LogToast';
 import { persistor, store } from '@/app/store/index.ts';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { useAppSelector } from '@/redux/hooks.ts';
@@ -42,9 +44,13 @@ export function AppProviders({ children }: AppProvidersProps) {
       <QueryClientProvider client={queryClient}>
         <ThemedApp>
           <DatabaseProvider>
-            <PersistGate loading={<LoadingScreen message="Restoring your session..." />} persistor={persistor}>
-              {children}
-            </PersistGate>
+            <AuthProvider>
+              <LogToastProvider>
+                <PersistGate loading={<LoadingScreen message="Restoring your session..." />} persistor={persistor}>
+                  {children}
+                </PersistGate>
+              </LogToastProvider>
+            </AuthProvider>
           </DatabaseProvider>
         </ThemedApp>
       </QueryClientProvider>

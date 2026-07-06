@@ -14,11 +14,13 @@ import { useMemo, useState } from 'react';
 import { MEAL_TYPE_LABELS } from '@/constants/mealTypes.ts';
 import type { MealType } from '@/constants/mealTypes.ts';
 import { useDiary } from '@/features/diary/hooks/useDiary.ts';
+import { useLogToast } from '@/components/common/LogToast';
 import { IngredientBuilderSection } from '@/features/foods/components/IngredientBuilderSection.tsx';
 import { RecipeNutritionSummary } from '@/features/recipe/components/RecipeNutritionSummary.tsx';
 import { useRecipePreview } from '@/features/recipe/hooks/useRecipes.ts';
 import type { RecipeIngredientDraft } from '@/types/recipe.types.ts';
 import { formatDisplayDate, isToday } from '@/utils/date.ts';
+import { isPositiveNumber } from '@/utils/bindNumberField.ts';
 
 interface ComposeMealDrawerProps {
   open: boolean;
@@ -38,16 +40,19 @@ export function ComposeMealDrawer({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { logFood, isLogging } = useDiary(date);
+  const { showFoodLogged, showItemsLogged } = useLogToast();
   const [ingredients, setIngredients] = useState<RecipeIngredientDraft[]>([]);
   const [logError, setLogError] = useState<string | null>(null);
 
   const ingredientInputs = useMemo(
     () =>
-      ingredients.map((item) => ({
-        foodId: item.foodId,
-        quantity: item.quantity,
-        unit: item.unit,
-      })),
+      ingredients
+        .filter((item) => isPositiveNumber(item.quantity))
+        .map((item) => ({
+          foodId: item.foodId,
+          quantity: item.quantity as number,
+          unit: item.unit,
+        })),
     [ingredients],
   );
 
@@ -68,14 +73,22 @@ export function ComposeMealDrawer({
     }
 
     try {
-      for (const ingredient of ingredients) {
+      const toLog = ingredients.filter((item) => isPositiveNumber(item.quantity));
+      for (const ingredient of toLog) {
         await logFood({
           date,
           mealType,
           foodId: ingredient.foodId,
-          quantity: { amount: ingredient.quantity, unit: ingredient.unit },
+          quantity: { amount: ingredient.quantity as number, unit: ingredient.unit },
         });
       }
+
+      if (toLog.length === 1) {
+        showFoodLogged(toLog[0].foodName, mealType);
+      } else if (toLog.length > 1) {
+        showItemsLogged(toLog.length, mealType);
+      }
+
       handleClose();
       onLogged?.();
     } catch (error) {

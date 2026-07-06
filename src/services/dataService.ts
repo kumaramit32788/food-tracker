@@ -1,6 +1,8 @@
 import { db } from '@/services/db/dexieDb.ts';
 import { CURRENT_SEED_VERSION } from '@/constants/db.ts';
 import { seedService } from '@/services/db/seedService.ts';
+import { getCurrentSyncUid } from '@/services/firebase/syncContext.ts';
+import { firestoreSyncService } from '@/services/firebase/firestoreSyncService.ts';
 
 export const dataService = {
   async exportAllData() {
@@ -43,7 +45,12 @@ export const dataService = {
   },
 
   async deleteAllUserData() {
-    const customFoods = await db.foods.filter((food) => food.isCustom).toArray();
+    const uid = getCurrentSyncUid();
+    if (uid) {
+      await firestoreSyncService.deleteUserCloudData(uid);
+    }
+
+    const customFoods = await db.foods.filter((food) => food.isCustom && !food.isCommunityFood).toArray();
     await Promise.all([
       db.diaryEntries.clear(),
       db.diaryDays.clear(),

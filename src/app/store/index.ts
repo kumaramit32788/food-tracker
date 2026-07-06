@@ -14,7 +14,7 @@ import { rootReducer } from './rootReducer.ts';
 
 const persistConfig = {
   key: 'nutritrack',
-  version: 1,
+  version: 2,
   storage: persistStorage,
   whitelist: ['auth', 'theme'],
 };

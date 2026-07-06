@@ -1,52 +1,70 @@
-import { DEVICE_USER_ID } from '@/constants/db.ts';
+import { getFirebaseAuth } from '@/services/firebase/firebaseApp.ts';
+import {
+  googleAuthService,
+  mapFirebaseUser,
+} from '@/services/firebase/googleAuth.ts';
+import { cloudSync } from '@/services/firebase/cloudSync.ts';
+import { firestoreSyncService } from '@/services/firebase/firestoreSyncService.ts';
+import { userAccountService } from '@/services/firebase/userAccountService.ts';
 import { deviceRepository } from '@/services/db/deviceRepository.ts';
-import type { User, UserProfile } from '@/types/auth.types.ts';
+import type { UserProfile } from '@/types/auth.types.ts';
+import type { UserRole } from '@/types/userAccount.types.ts';
+import type { User as FirebaseUser } from 'firebase/auth';
 
-function generateToken(): string {
-  return `local-session-${Date.now()}`;
+async function pullProfileSafely(uid: string, force = false): Promise<UserProfile | null> {
+  try {
+    const { profile } = await firestoreSyncService.pullUserData(uid, force);
+    return profile;
+  } catch (error) {
+    console.warn('[auth] Cloud sync pull failed — continuing with local data', error);
+    return deviceRepository.getProfile();
+  }
+}
+
+async function buildSession(firebaseUser: FirebaseUser, forcePull = false) {
+  const user = mapFirebaseUser(firebaseUser);
+  const token = await firebaseUser.getIdToken();
+  const role = await userAccountService.ensureAccount(user.id, user.email);
+
+  firestoreSyncService.setActiveUser(user.id);
+  const profile = await pullProfileSafely(user.id, forcePull);
+
+  return { user, token, profile, role };
 }
 
 export const authService = {
-  async hasDeviceAccount(): Promise<boolean> {
-    return deviceRepository.hasDeviceUser();
-  },
+  async signInWithGoogle() {
+    const credential = await googleAuthService.signInWithGoogle();
 
-  async loginDevice(): Promise<{ user: User; token: string }> {
-    const record = await deviceRepository.getDeviceUser();
-
-    if (!record) {
-      throw new Error('No account found on this device. Please set up your profile first.');
+    if (!credential) {
+      return null;
     }
 
-    return {
-      user: {
-        id: DEVICE_USER_ID,
-        name: record.name,
-      },
-      token: generateToken(),
-    };
+    return buildSession(credential.user, true);
   },
 
-  async setupAccount(profile: UserProfile): Promise<{ user: User; token: string; profile: UserProfile }> {
-    const hasAccount = await deviceRepository.hasDeviceUser();
+  async completeRedirectSignIn() {
+    const result = await googleAuthService.getRedirectResult();
+    if (!result?.user) return null;
+    return buildSession(result.user, true);
+  },
 
-    if (hasAccount) {
-      throw new Error('This device already has an account. Only one user is allowed per device.');
-    }
+  async restoreSession() {
+    const firebaseUser = getFirebaseAuth().currentUser;
+    if (!firebaseUser) return null;
 
-    const user = await deviceRepository.saveDeviceUser(profile.name);
-    await deviceRepository.saveProfile(profile);
+    return buildSession(firebaseUser);
+  },
 
-    return {
-      user,
-      token: generateToken(),
-      profile,
-    };
+  async refreshRole(): Promise<UserRole | null> {
+    const firebaseUser = getFirebaseAuth().currentUser;
+    if (!firebaseUser) return null;
+    return userAccountService.getRole(firebaseUser.uid);
   },
 
   async saveProfile(profile: UserProfile): Promise<UserProfile> {
     const saved = await deviceRepository.saveProfile(profile);
-    await deviceRepository.updateDeviceUserName(profile.name);
+    await cloudSync.afterProfileSave(saved);
     return saved;
   },
 
@@ -54,20 +72,9 @@ export const authService = {
     return deviceRepository.getProfile();
   },
 
-  async getDeviceUser(): Promise<User | null> {
-    const record = await deviceRepository.getDeviceUser();
-
-    if (!record) {
-      return null;
-    }
-
-    return {
-      id: DEVICE_USER_ID,
-      name: record.name,
-    };
-  },
-
-  logout(): void {
-    // Session only — device data stays in IndexedDB.
+  async signOut() {
+    await cloudSync.flushPending();
+    firestoreSyncService.setActiveUser(null);
+    await googleAuthService.signOut();
   },
 };

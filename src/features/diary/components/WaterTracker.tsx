@@ -1,5 +1,10 @@
 import { Button, Stack, TextField, Typography } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  bindNumberInputState,
+  coerceNumberValue,
+  type NumberFormValue,
+} from '@/utils/bindNumberField.ts';
 
 interface WaterTrackerProps {
   waterMl: number;
@@ -7,16 +12,20 @@ interface WaterTrackerProps {
 }
 
 export function WaterTracker({ waterMl, onSave }: WaterTrackerProps) {
-  const [value, setValue] = useState(waterMl);
+  const [value, setValue] = useState<NumberFormValue>(waterMl);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setValue(waterMl);
+  }, [waterMl]);
+
+  const displayValue = coerceNumberValue(value);
 
   return (
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ alignItems: { sm: 'center' } }}>
       <TextField
-        type="number"
         label="Water today (ml)"
-        value={value}
-        onChange={(event) => setValue(Number(event.target.value))}
+        {...bindNumberInputState(value, setValue)}
         slotProps={{ htmlInput: { min: 0, step: 100 } }}
         sx={{ maxWidth: 200 }}
       />
@@ -26,7 +35,7 @@ export function WaterTracker({ waterMl, onSave }: WaterTrackerProps) {
         onClick={async () => {
           setSaving(true);
           try {
-            await onSave(value);
+            await onSave(displayValue);
           } finally {
             setSaving(false);
           }
@@ -35,7 +44,7 @@ export function WaterTracker({ waterMl, onSave }: WaterTrackerProps) {
         {saving ? 'Saving...' : 'Save water'}
       </Button>
       <Typography variant="body2" color="text.secondary">
-        {(value / 1000).toFixed(1)} L logged
+        {(displayValue / 1000).toFixed(1)} L logged
       </Typography>
     </Stack>
   );

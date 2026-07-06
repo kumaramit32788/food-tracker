@@ -24,10 +24,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { MEAL_TYPES, MEAL_TYPE_LABELS } from '@/constants/mealTypes.ts';
 import type { MealType } from '@/constants/mealTypes.ts';
 import { useDiary } from '@/features/diary/hooks/useDiary.ts';
+import { useLogToast } from '@/components/common/LogToast';
 import { FavoriteButton } from '@/features/foods/components/FavoriteButton.tsx';
+import { FoodModerationChip } from '@/features/foods/components/FoodModerationChip.tsx';
 import { FoodNutritionGrid } from '@/features/foods/components/FoodNutritionGrid.tsx';
 import type { Food } from '@/types/food.types.ts';
 import type { QuantityInput, UnitType } from '@/types/unit.types.ts';
+import {
+  bindNumberInputState,
+  coerceNumberValue,
+  isPositiveNumber,
+  type NumberFormValue,
+} from '@/utils/bindNumberField.ts';
 import { calculateFoodNutrition } from '@/utils/calculateNutrition.ts';
 import {
   convertFromBaseUnit,
@@ -70,11 +78,15 @@ export function FoodDetailDrawer({
 }: FoodDetailDrawerProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [quantity, setQuantity] = useState<QuantityInput>({ amount: 1, unit: 'g' });
+  const [quantity, setQuantity] = useState<{ amount: NumberFormValue; unit: UnitType }>({
+    amount: 1,
+    unit: 'g',
+  });
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [mealType, setMealType] = useState<MealType>('lunch');
   const diaryDate = logDate ?? getLocalDateKey();
   const { logFood, isLogging } = useDiary(diaryDate);
+  const { showFoodLogged } = useLogToast();
 
   useEffect(() => {
     if (!food || !open) {
@@ -98,12 +110,17 @@ export function FoodDetailDrawer({
     [food],
   );
 
+  const servingQuantity: QuantityInput = {
+    amount: coerceNumberValue(quantity.amount),
+    unit: quantity.unit,
+  };
+
   const servingNutrition = useMemo(() => {
-    if (!food || quantity.amount <= 0) {
+    if (!food || !isPositiveNumber(quantity.amount)) {
       return null;
     }
-    return calculateFoodNutrition(food, quantity);
-  }, [food, quantity]);
+    return calculateFoodNutrition(food, servingQuantity);
+  }, [food, quantity.amount, quantity.unit, servingQuantity]);
 
   const content = food ? (
     <Stack spacing={2.5} sx={{ p: { xs: 2, sm: 3 } }}>
@@ -114,7 +131,8 @@ export function FoodDetailDrawer({
           </Typography>
           <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', gap: 0.75 }}>
             <Chip label={food.category} size="small" />
-            {food.isCustom && <Chip label="Custom" size="small" color="secondary" />}
+            {food.isCustom && !food.isCommunityFood && <Chip label="Custom" size="small" color="secondary" />}
+            <FoodModerationChip food={food} />
             {food.isVegetarian && <Chip label="Vegetarian" size="small" color="success" variant="outlined" />}
             {food.isVegan && <Chip label="Vegan" size="small" color="success" />}
           </Stack>
@@ -154,15 +172,9 @@ export function FoodDetailDrawer({
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
           <TextField
             label="Amount"
-            type="number"
-            value={quantity.amount}
-            onChange={(event) => {
-              const next = (event.target as HTMLInputElement).valueAsNumber;
-              setQuantity((prev) => ({
-                ...prev,
-                amount: Number.isFinite(next) ? next : 0,
-              }));
-            }}
+            {...bindNumberInputState(quantity.amount, (amount) =>
+              setQuantity((prev) => ({ ...prev, amount })),
+            )}
             slotProps={{ htmlInput: { min: 0, step: 1 } }}
             sx={{ flex: 1 }}
           />
@@ -176,7 +188,10 @@ export function FoodDetailDrawer({
                 if (!food) {
                   return { ...prev, unit: nextUnit };
                 }
-                const baseAmount = convertToBaseUnit(food, prev);
+                const baseAmount = convertToBaseUnit(food, {
+                  amount: coerceNumberValue(prev.amount),
+                  unit: prev.unit,
+                });
                 const nextAmount =
                   baseAmount > 0
                     ? roundServingAmount(convertFromBaseUnit(food, baseAmount, nextUnit))
@@ -244,7 +259,7 @@ export function FoodDetailDrawer({
           </TextField>
           <Button
             variant="contained"
-            disabled={isLogging || quantity.amount <= 0}
+            disabled={isLogging || !isPositiveNumber(quantity.amount)}
             onClick={async () => {
               if (!food) {
                 return;
@@ -253,8 +268,9 @@ export function FoodDetailDrawer({
                 date: diaryDate,
                 mealType,
                 foodId: food.id,
-                quantity,
+                quantity: servingQuantity,
               });
+              showFoodLogged(food.name, mealType);
               onClose();
               onLogged?.();
             }}
@@ -278,7 +294,7 @@ export function FoodDetailDrawer({
         )}
       </Box>
 
-      {food.isCustom && onDelete && (
+      {food.isCustom && !food.isCommunityFood && onDelete && (
         <Button
           color="error"
           variant="outlined"
@@ -314,7 +330,8 @@ export function FoodDetailDrawer({
         <DialogTitle>Delete custom food?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary">
-            {food?.name} will be removed from your local database. This cannot be undone.
+            {food?.name} will be removed from your account on this device and synced to the cloud.
+            This cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>

@@ -2,6 +2,8 @@ import type { FoodCategory } from '@/constants/foodCategories.ts';
 import type { NutritionPer100g } from '@/types/nutrition.types.ts';
 import type { BaseUnit, FoodUnitConversion } from '@/types/unit.types.ts';
 
+export type FoodModerationStatus = 'pending' | 'approved' | 'rejected';
+
 export interface Food {
   id: string;
   name: string;
@@ -13,6 +15,12 @@ export interface Food {
   isVegan: boolean;
   isCustom: boolean;
   isRecipe: boolean;
+  /** Approved shared food visible to all users */
+  isCommunityFood?: boolean;
+  /** Moderation state for user-submitted foods */
+  moderationStatus?: FoodModerationStatus;
+  /** Firebase UID of the user who submitted this custom food */
+  createdByUid?: string;
   baseUnit: BaseUnit;
   defaultServing: FoodUnitConversion;
   availableUnits: FoodUnitConversion[];

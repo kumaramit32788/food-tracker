@@ -23,6 +23,11 @@ import type { CreateFoodInput } from '@/types/food.types.ts';
 import type { UnitType } from '@/types/unit.types.ts';
 import { getAvailableUnitsForFood } from '@/utils/convertUnit.ts';
 import { searchFoods } from '@/utils/searchFoods.ts';
+import {
+  bindNumberInputState,
+  isPositiveNumber,
+  type NumberFormValue,
+} from '@/utils/bindNumberField.ts';
 
 interface AddIngredientDialogProps {
   open: boolean;
@@ -34,7 +39,7 @@ export function AddIngredientDialog({ open, onClose, onAdd }: AddIngredientDialo
   const { foods, createFood, isCreating } = useFoods();
   const [query, setQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<NumberFormValue>(1);
   const [unit, setUnit] = useState<UnitType>('g');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
@@ -58,7 +63,7 @@ export function AddIngredientDialog({ open, onClose, onAdd }: AddIngredientDialo
   };
 
   const handleAdd = () => {
-    if (!selectedFood || quantity <= 0) {
+    if (!selectedFood || !isPositiveNumber(quantity)) {
       return;
     }
 
@@ -116,10 +121,8 @@ export function AddIngredientDialog({ open, onClose, onAdd }: AddIngredientDialo
               </Typography>
               <Stack direction="row" spacing={1.5}>
                 <TextField
-                  type="number"
                   label="Amount"
-                  value={quantity}
-                  onChange={(event) => setQuantity(Number(event.target.value))}
+                  {...bindNumberInputState(quantity, setQuantity)}
                   slotProps={{ htmlInput: { min: 0.1, step: 0.5 } }}
                   fullWidth
                 />
@@ -150,7 +153,7 @@ export function AddIngredientDialog({ open, onClose, onAdd }: AddIngredientDialo
           variant="contained"
           startIcon={<AddOutlinedIcon />}
           onClick={handleAdd}
-          disabled={!selectedFood || quantity <= 0}
+          disabled={!selectedFood || !isPositiveNumber(quantity)}
         >
           Add
         </Button>

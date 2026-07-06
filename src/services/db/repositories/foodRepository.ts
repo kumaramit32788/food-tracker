@@ -6,7 +6,14 @@ import type { UnitType } from '@/types/unit.types.ts';
 import { shouldExcludeVolumeUnitForEgg } from '@/utils/foodUnits.ts';
 import { buildSearchText } from '@/utils/searchFoods.ts';
 
-function createFoodRecord(input: CreateFoodInput & { id?: string; isCustom?: boolean }): Food {
+function createFoodRecord(
+  input: CreateFoodInput & {
+    id?: string;
+    isCustom?: boolean;
+    createdByUid?: string;
+    moderationStatus?: Food['moderationStatus'];
+  },
+): Food {
   const now = new Date().toISOString();
 
   return {
@@ -19,6 +26,9 @@ function createFoodRecord(input: CreateFoodInput & { id?: string; isCustom?: boo
     isVegetarian: input.isVegetarian ?? true,
     isVegan: input.isVegan ?? false,
     isCustom: input.isCustom ?? true,
+    isCommunityFood: false,
+    moderationStatus: input.moderationStatus ?? (input.isCustom === false ? undefined : 'pending'),
+    createdByUid: input.createdByUid,
     isRecipe: false,
     baseUnit: input.baseUnit ?? 'g',
     defaultServing: input.defaultServing,
@@ -114,7 +124,7 @@ export const foodRepository = {
     await db.foods.bulkPut(foods.map(sanitizeFoodRecord));
   },
 
-  async create(input: CreateFoodInput): Promise<Food> {
+  async create(input: CreateFoodInput, createdByUid?: string): Promise<Food> {
     const duplicate = await this.findByName(input.name);
     if (duplicate) {
       throw new Error(`A custom food named "${input.name}" already exists`);
@@ -129,7 +139,14 @@ export const foodRepository = {
       throw new Error('Piece-based foods must include a serving weight in grams');
     }
 
-    const food = sanitizeFoodRecord(createFoodRecord({ ...input, isCustom: true }));
+    const food = sanitizeFoodRecord(
+      createFoodRecord({
+        ...input,
+        isCustom: true,
+        createdByUid,
+        moderationStatus: 'pending',
+      }),
+    );
     await db.foods.put(food);
     return food;
   },

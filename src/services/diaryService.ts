@@ -1,3 +1,4 @@
+import { cloudSync } from '@/services/firebase/cloudSync.ts';
 import type { MealType } from '@/constants/mealTypes.ts';
 import { diaryRepository } from '@/services/db/repositories/diaryRepository.ts';
 import { foodRepository } from '@/services/db/repositories/foodRepository.ts';
@@ -47,7 +48,7 @@ export const diaryService = {
     const nutrition = calculateFoodNutritionFromFood(food, input.quantity);
     const quantityInBase = convertToBaseUnit(food, input.quantity);
 
-    return diaryRepository.createEntry({
+    const entry = await diaryRepository.createEntry({
       date: input.date,
       mealType: input.mealType,
       entryType: 'food',
@@ -66,6 +67,8 @@ export const diaryService = {
         sodium: roundSodium(food, quantityInBase),
       }),
     });
+    cloudSync.afterDiaryChange(input.date);
+    return entry;
   },
 
   async logRecipe(input: LogRecipeInput): Promise<DiaryEntry> {
@@ -78,7 +81,7 @@ export const diaryService = {
     const servings = input.servings > 0 ? input.servings : 1;
     const multiplier = servings;
 
-    return diaryRepository.createEntry({
+    const entry = await diaryRepository.createEntry({
       date: input.date,
       mealType: input.mealType,
       entryType: 'recipe',
@@ -98,16 +101,23 @@ export const diaryService = {
         sodium: round1(recipe.nutritionPerServing.sodium * multiplier),
       }),
     });
+    cloudSync.afterDiaryChange(input.date);
+    return entry;
   },
 
   async removeEntry(id: string): Promise<void> {
+    const entry = await db.diaryEntries.get(id);
     await diaryRepository.removeEntry(id);
+    if (entry?.date) {
+      cloudSync.afterDiaryChange(entry.date);
+    }
   },
 
   async setWaterMl(date: string, waterMl: number): Promise<DiaryDay> {
     const day = await diaryRepository.getOrCreateDay(date);
     const updated = { ...day, waterMl: Math.max(0, waterMl) };
     await db.diaryDays.put(updated);
+    cloudSync.afterDiaryChange(date);
     return updated;
   },
 

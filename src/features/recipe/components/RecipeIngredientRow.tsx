@@ -4,6 +4,7 @@ import { IconButton, MenuItem, Stack, TextField, Typography } from '@mui/materia
 import type { RecipeIngredientDraft } from '@/types/recipe.types.ts';
 import type { UnitType } from '@/types/unit.types.ts';
 import { getAvailableUnitsForFood } from '@/utils/convertUnit.ts';
+import { bindNumberInputState } from '@/utils/bindNumberField.ts';
 import type { Food } from '@/types/food.types.ts';
 
 interface RecipeIngredientRowProps {
@@ -38,13 +39,11 @@ export function RecipeIngredientRow({
       </Typography>
 
       <TextField
-        type="number"
         size="small"
         label="Amount"
-        value={ingredient.quantity}
-        onChange={(event) =>
-          onChange({ ...ingredient, quantity: Number(event.target.value) })
-        }
+        {...bindNumberInputState(ingredient.quantity, (quantity) =>
+          onChange({ ...ingredient, quantity }),
+        )}
         slotProps={{ htmlInput: { min: 0.1, step: 0.5 } }}
         sx={{ width: { xs: '100%', sm: 110 } }}
       />

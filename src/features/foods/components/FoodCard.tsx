@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 import { FavoriteButton } from '@/features/foods/components/FavoriteButton.tsx';
+import { FoodModerationChip } from '@/features/foods/components/FoodModerationChip.tsx';
 import type { Food } from '@/types/food.types.ts';
 import { formatCalories } from '@/utils/formatNutrition.ts';
 
@@ -54,7 +55,10 @@ export function FoodCard({
 
             <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', gap: 0.75 }}>
               <Chip label={food.category} size="small" variant="outlined" />
-              {food.isCustom && <Chip label="Custom" size="small" color="secondary" variant="outlined" />}
+              {food.isCustom && !food.isCommunityFood && (
+                <Chip label="Custom" size="small" color="secondary" variant="outlined" />
+              )}
+              <FoodModerationChip food={food} />
               {food.isVegetarian && (
                 <Chip label="Veg" size="small" color="success" variant="outlined" />
               )}

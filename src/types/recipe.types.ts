@@ -1,6 +1,7 @@
 import type { RecipeCategory } from '@/constants/foodCategories.ts';
 import type { NutritionPer100g, NutritionSnapshot } from '@/types/nutrition.types.ts';
 import type { UnitType } from '@/types/unit.types.ts';
+import type { NumberFormValue } from '@/utils/bindNumberField.ts';
 
 export interface RecipeIngredient {
   id: string;
@@ -38,7 +39,10 @@ export interface CreateRecipeInput {
   ingredients: RecipeIngredientInput[];
 }
 
-export interface RecipeIngredientDraft extends RecipeIngredientInput {
+export interface RecipeIngredientDraft {
   id: string;
+  foodId: string;
   foodName: string;
+  quantity: NumberFormValue;
+  unit: UnitType;
 }

@@ -116,7 +116,7 @@ export function RecipeBuilderPage() {
         <DialogTitle>Delete recipe?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary">
-            {deleteTarget?.name} will be removed from your local database.
+            {deleteTarget?.name} will be removed from your account on this device and synced to the cloud.
           </Typography>
         </DialogContent>
         <DialogActions>

@@ -24,6 +24,7 @@ import {
 import { ComposeMealDrawer } from '@/features/diary/components/ComposeMealDrawer.tsx';
 import { useDiary } from '@/features/diary/hooks/useDiary.ts';
 import { useFoodBrowser } from '@/features/foods/hooks/useFoodBrowser.ts';
+import { useLogToast } from '@/components/common/LogToast';
 import type { Food } from '@/types/food.types.ts';
 import type { CreateFoodInput } from '@/types/food.types.ts';
 import type { CreateFoodFormValues } from '@/features/foods/validation/foodSchema.ts';
@@ -41,8 +42,8 @@ export function FoodsPage() {
     setQuery,
     category,
     setCategory,
-    vegOnly,
-    setVegOnly,
+    dietFilter,
+    setDietFilter,
     mode,
     isLoading,
     foods,
@@ -64,6 +65,7 @@ export function FoodsPage() {
   } = useFoodBrowser();
 
   const { logFood } = useDiary(logDate);
+  const { showFoodLogged } = useLogToast();
 
   const [selectedFoodId, setSelectedFoodId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -94,6 +96,7 @@ export function FoodsPage() {
           foodId: food.id,
           quantity: { amount: 1, unit: food.defaultServing.unit },
         });
+        showFoodLogged(food.name, diaryMealType);
         navigate(ROUTES.DASHBOARD);
         return food;
       }
@@ -201,16 +204,17 @@ export function FoodsPage() {
       <FoodCategoryFilter
         selectedCategory={category}
         categoryCounts={categoryCounts}
-        vegOnly={vegOnly}
+        dietFilter={dietFilter}
         onCategoryChange={setCategory}
-        onVegOnlyChange={setVegOnly}
+        onDietFilterChange={setDietFilter}
       />
 
       {hasActiveFilters && (
         <Stack direction="row" spacing={1} sx={{ mb: 3, flexWrap: 'wrap', gap: 1 }}>
           {query && <Chip label={`Search: ${query}`} size="small" />}
           {category && <Chip label={category} size="small" />}
-          {vegOnly && <Chip label="Veg only" size="small" color="success" />}
+          {dietFilter === 'veg' && <Chip label="Veg only" size="small" color="success" />}
+          {dietFilter === 'nonVeg' && <Chip label="Non-veg only" size="small" color="warning" />}
           <Button
             size="small"
             startIcon={<FilterAltOffOutlinedIcon />}

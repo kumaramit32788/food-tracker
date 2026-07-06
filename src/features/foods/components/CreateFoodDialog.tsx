@@ -21,6 +21,7 @@ import { FOOD_CATEGORIES } from '@/constants/foodCategories.ts';
 import { MEAL_TYPE_LABELS } from '@/constants/mealTypes.ts';
 import type { MealType } from '@/constants/mealTypes.ts';
 import { useDiary } from '@/features/diary/hooks/useDiary.ts';
+import { useLogToast } from '@/components/common/LogToast';
 import { IngredientBuilderSection } from '@/features/foods/components/IngredientBuilderSection.tsx';
 import { RecipeNutritionSummary } from '@/features/recipe/components/RecipeNutritionSummary.tsx';
 import { useRecipePreview } from '@/features/recipe/hooks/useRecipes.ts';
@@ -35,7 +36,7 @@ import type { CreateFoodInput } from '@/types/food.types.ts';
 import type { Food } from '@/types/food.types.ts';
 import type { RecipeIngredientDraft } from '@/types/recipe.types.ts';
 import type { RecipeNutritionResult } from '@/utils/calculateRecipeNutrition.ts';
-import { bindNumberField } from '@/utils/bindNumberField.ts';
+import { bindNumberField, isPositiveNumber } from '@/utils/bindNumberField.ts';
 
 type InputMode = 'manual' | 'ingredients';
 
@@ -45,7 +46,7 @@ interface CreateFoodDialogProps {
   onSubmit: (input: CreateFoodInput) => Promise<Food | unknown>;
   onSaveFood?: (input: CreateFoodInput) => Promise<Food | unknown>;
   isSubmitting?: boolean;
-  initialValues?: Partial<CreateFoodFormValues>;
+  initialValues?: Partial<CreateFoodFormInput>;
   logContext?: { date: string; mealType: MealType };
   onIngredientsLogged?: () => void;
 }
@@ -124,6 +125,7 @@ export function CreateFoodDialog({
   const [ingredientError, setIngredientError] = useState<string | null>(null);
   const [isLoggingIngredients, setIsLoggingIngredients] = useState(false);
   const { logFood } = useDiary(logContext?.date ?? '');
+  const { showFoodLogged, showItemsLogged } = useLogToast();
 
   const {
     control,
@@ -150,11 +152,13 @@ export function CreateFoodDialog({
 
   const ingredientInputs = useMemo(
     () =>
-      ingredients.map((item) => ({
-        foodId: item.foodId,
-        quantity: item.quantity,
-        unit: item.unit,
-      })),
+      ingredients
+        .filter((item) => isPositiveNumber(item.quantity))
+        .map((item) => ({
+          foodId: item.foodId,
+          quantity: item.quantity as number,
+          unit: item.unit,
+        })),
     [ingredients],
   );
 
@@ -236,16 +240,23 @@ export function CreateFoodDialog({
               unit: 'g',
             },
           });
+          showFoodLogged(food.name, logContext.mealType);
           onIngredientsLogged?.();
         }
       } else if (logContext) {
-        for (const ingredient of ingredients) {
+        const toLog = ingredients.filter((item) => isPositiveNumber(item.quantity));
+        for (const ingredient of toLog) {
           await logFood({
             date: logContext.date,
             mealType: logContext.mealType,
             foodId: ingredient.foodId,
-            quantity: { amount: ingredient.quantity, unit: ingredient.unit },
+            quantity: { amount: ingredient.quantity as number, unit: ingredient.unit },
           });
+        }
+        if (toLog.length === 1) {
+          showFoodLogged(toLog[0].foodName, logContext.mealType);
+        } else if (toLog.length > 1) {
+          showItemsLogged(toLog.length, logContext.mealType);
         }
         onIngredientsLogged?.();
       }
@@ -376,6 +387,11 @@ export function CreateFoodDialog({
               <Typography variant="body2" color="text.secondary">
                 Enter nutrition per 100g. Calories, protein, carbs, and fat are required.
               </Typography>
+
+              <Alert severity="info">
+                Your food will be visible to you immediately. After admin approval it becomes
+                available to all NutriTrack users.
+              </Alert>
 
               <Controller
                 name="category"

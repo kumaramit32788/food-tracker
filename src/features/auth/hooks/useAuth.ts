@@ -1,54 +1,36 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes.ts';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks.ts';
 import {
   clearAuthError,
-  loginDevice,
-  logout,
+  refreshUserRole,
   saveUserProfile,
-  setupAccount,
+  signInWithGoogle,
+  signOutUser,
 } from '@/redux/slices/authSlice.ts';
-import { authService } from '@/services/authService.ts';
 import type { UserProfile } from '@/types/auth.types.ts';
+import { isAdminRole } from '@/types/userAccount.types.ts';
 
 export function useAuth() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user, profile, isAuthenticated, isLoading, error } = useAppSelector(
-    (state) => state.auth,
-  );
-  const [hasDeviceAccount, setHasDeviceAccount] = useState(false);
+  const { user, profile, role, isAuthenticated, isLoading, isAuthReady, isSigningOut, error } =
+    useAppSelector((state) => state.auth);
 
-  useEffect(() => {
-    void authService.hasDeviceAccount().then(setHasDeviceAccount);
-  }, [isAuthenticated]);
+  const signInWithGoogleHandler = useCallback(async () => {
+    const result = await dispatch(signInWithGoogle());
 
-  const login = useCallback(async () => {
-    const result = await dispatch(loginDevice());
+    if (signInWithGoogle.fulfilled.match(result)) {
+      if (!result.payload) return;
 
-    if (loginDevice.fulfilled.match(result)) {
-      const savedProfile = result.payload.profile;
-
-      if (savedProfile) {
+      if (result.payload.profile) {
         navigate(ROUTES.DASHBOARD, { replace: true });
       } else {
         navigate(ROUTES.PROFILE, { replace: true });
       }
     }
   }, [dispatch, navigate]);
-
-  const createAccount = useCallback(
-    async (profileData: UserProfile) => {
-      const result = await dispatch(setupAccount(profileData));
-
-      if (setupAccount.fulfilled.match(result)) {
-        setHasDeviceAccount(true);
-        navigate(ROUTES.DASHBOARD, { replace: true });
-      }
-    },
-    [dispatch, navigate],
-  );
 
   const saveProfile = useCallback(
     async (profileData: UserProfile, options?: { redirect?: boolean }) => {
@@ -66,13 +48,19 @@ export function useAuth() {
     [dispatch, navigate],
   );
 
-  const signOut = useCallback(() => {
-    dispatch(logout());
-    navigate(ROUTES.LOGIN, { replace: true });
+  const signOut = useCallback(async () => {
+    const result = await dispatch(signOutUser());
+    if (signOutUser.fulfilled.match(result)) {
+      navigate(ROUTES.LOGIN, { replace: true });
+    }
   }, [dispatch, navigate]);
 
   const dismissError = useCallback(() => {
     dispatch(clearAuthError());
+  }, [dispatch]);
+
+  const refreshRole = useCallback(async () => {
+    await dispatch(refreshUserRole());
   }, [dispatch]);
 
   const hasCompletedProfile = Boolean(profile);
@@ -80,15 +68,18 @@ export function useAuth() {
   return {
     user,
     profile,
+    role,
+    isAdmin: isAdminRole(role),
     isAuthenticated,
+    isAuthReady,
     isLoading,
+    isSigningOut,
     error,
-    hasDeviceAccount,
     hasCompletedProfile,
-    login,
-    createAccount,
+    signInWithGoogle: signInWithGoogleHandler,
     saveProfile,
     signOut,
     dismissError,
+    refreshRole,
   };
 }

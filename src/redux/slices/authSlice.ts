@@ -1,42 +1,33 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import { REHYDRATE } from 'redux-persist';
 import { authService } from '@/services/authService.ts';
+import { formatFirebaseAuthError } from '@/services/firebase/googleAuth.ts';
+import { setCurrentSyncUid } from '@/services/firebase/syncContext.ts';
 import type { AuthState, User, UserProfile } from '@/types/auth.types.ts';
+import type { UserRole } from '@/types/userAccount.types.ts';
 
 const initialState: AuthState = {
   user: null,
   profile: null,
+  role: null,
   token: null,
   isAuthenticated: false,
   isLoading: false,
+  isSigningOut: false,
+  isAuthReady: false,
   error: null,
 };
 
-export const loginDevice = createAsyncThunk<
-  { user: User; token: string; profile: UserProfile | null },
+export const signInWithGoogle = createAsyncThunk<
+  { user: User; token: string; profile: UserProfile | null; role: UserRole } | null,
   void,
   { rejectValue: string }
->('auth/loginDevice', async (_, { rejectWithValue }) => {
+>('auth/signInWithGoogle', async (_, { rejectWithValue }) => {
   try {
-    const { user, token } = await authService.loginDevice();
-    const profile = await authService.getProfile();
-    return { user, token, profile };
+    return await authService.signInWithGoogle();
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Login failed';
-    return rejectWithValue(message);
-  }
-});
-
-export const setupAccount = createAsyncThunk<
-  { user: User; token: string; profile: UserProfile },
-  UserProfile,
-  { rejectValue: string }
->('auth/setupAccount', async (profile, { rejectWithValue }) => {
-  try {
-    return await authService.setupAccount(profile);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Account setup failed';
-    return rejectWithValue(message);
+    return rejectWithValue(formatFirebaseAuthError(error));
   }
 });
 
@@ -53,68 +44,95 @@ export const saveUserProfile = createAsyncThunk<
   }
 });
 
+export const signOutUser = createAsyncThunk<void, void, { rejectValue: string }>(
+  'auth/signOut',
+  async (_, { rejectWithValue }) => {
+    try {
+      await authService.signOut();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Sign out failed';
+      return rejectWithValue(message);
+    }
+  },
+);
+
+export const refreshUserRole = createAsyncThunk<UserRole | null, void>(
+  'auth/refreshRole',
+  async () => authService.refreshRole(),
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
     logout: (state) => {
-      authService.logout();
+      setCurrentSyncUid(null);
       state.user = null;
       state.profile = null;
+      state.role = null;
       state.token = null;
       state.isAuthenticated = false;
       state.error = null;
       state.isLoading = false;
+      state.isSigningOut = false;
     },
     clearAuthError: (state) => {
       state.error = null;
     },
+    setAuthError: (state, action: PayloadAction<string>) => {
+      state.error = action.payload;
+    },
+    setAuthReady: (state) => {
+      state.isAuthReady = true;
+    },
     hydrateAuth: (
       state,
-      action: PayloadAction<{ user: User; token: string; profile: UserProfile | null }>,
+      action: PayloadAction<{
+        user: User;
+        token: string;
+        profile: UserProfile | null;
+        role: UserRole;
+      }>,
     ) => {
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.profile = action.payload.profile;
+      state.role = action.payload.role;
       state.isAuthenticated = true;
       state.isLoading = false;
       state.error = null;
+      setCurrentSyncUid(action.payload.user.id);
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loginDevice.pending, (state) => {
+      .addCase(REHYDRATE, (state) => {
+        state.error = null;
+        state.isLoading = false;
+        state.isAuthReady = false;
+      })
+      .addCase(signInWithGoogle.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(loginDevice.fulfilled, (state, action) => {
+      .addCase(signInWithGoogle.fulfilled, (state, action) => {
         state.isLoading = false;
+        if (!action.payload) {
+          // Redirect in progress — keep loading until page returns
+          state.isLoading = true;
+          return;
+        }
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.profile = action.payload.profile;
+        state.role = action.payload.role;
         state.isAuthenticated = true;
         state.error = null;
+        setCurrentSyncUid(action.payload.user.id);
       })
-      .addCase(loginDevice.rejected, (state, action) => {
+      .addCase(signInWithGoogle.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload ?? 'Login failed';
-        state.isAuthenticated = false;
-      })
-      .addCase(setupAccount.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(setupAccount.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.profile = action.payload.profile;
-        state.isAuthenticated = true;
-        state.error = null;
-      })
-      .addCase(setupAccount.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload ?? 'Account setup failed';
+        state.error = action.payload ?? 'Google sign-in failed';
         state.isAuthenticated = false;
       })
       .addCase(saveUserProfile.pending, (state) => {
@@ -132,9 +150,33 @@ const authSlice = createSlice({
       .addCase(saveUserProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload ?? 'Failed to save profile';
+      })
+      .addCase(signOutUser.pending, (state) => {
+        state.isSigningOut = true;
+        state.error = null;
+      })
+      .addCase(signOutUser.fulfilled, (state) => {
+        setCurrentSyncUid(null);
+        state.user = null;
+        state.profile = null;
+        state.role = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.error = null;
+        state.isLoading = false;
+        state.isSigningOut = false;
+      })
+      .addCase(signOutUser.rejected, (state, action) => {
+        state.isSigningOut = false;
+        state.error = action.payload ?? 'Sign out failed';
+      })
+      .addCase(refreshUserRole.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.role = action.payload;
+        }
       });
   },
 });
 
-export const { logout, clearAuthError, hydrateAuth } = authSlice.actions;
+export const { logout, clearAuthError, setAuthError, hydrateAuth, setAuthReady } = authSlice.actions;
 export default authSlice.reducer;

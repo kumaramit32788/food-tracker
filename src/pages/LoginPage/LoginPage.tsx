@@ -1,5 +1,5 @@
-import { LocalLoginForm } from '@/features/auth/components/LocalLoginForm.tsx';
+import { GoogleLoginForm } from '@/features/auth/components/GoogleLoginForm.tsx';
 
 export function LoginPage() {
-  return <LocalLoginForm />;
+  return <GoogleLoginForm />;
 }

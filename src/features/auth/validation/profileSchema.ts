@@ -11,6 +11,16 @@ function formNumber(build: (schema: z.ZodNumber) => z.ZodNumber) {
     .transform((value) => value as z.infer<typeof numberSchema>);
 }
 
+function formEnum<T extends readonly [string, ...string[]]>(
+  values: T,
+  message = 'This field is required',
+) {
+  return z
+    .union([z.enum(values), z.literal('')])
+    .refine((value) => value !== '', { message })
+    .transform((value) => value as T[number]);
+}
+
 const profileFieldsSchema = z.object({
   name: z
     .string()
@@ -20,15 +30,15 @@ const profileFieldsSchema = z.object({
   age: formNumber((n) =>
     n.min(13, 'You must be at least 13 years old').max(100, 'Enter a valid age'),
   ),
-  gender: z.enum(['male', 'female', 'other']),
+  gender: formEnum(['male', 'female', 'other']),
   height: formNumber((n) =>
     n.min(100, 'Height must be at least 100 cm').max(250, 'Height must be under 250 cm'),
   ),
   weight: formNumber((n) =>
     n.min(30, 'Weight must be at least 30 kg').max(300, 'Weight must be under 300 kg'),
   ),
-  activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'extra']),
-  goalType: z.enum(['lose', 'maintain', 'gain']),
+  activityLevel: formEnum(['sedentary', 'light', 'moderate', 'active', 'extra']),
+  goalType: formEnum(['lose', 'maintain', 'gain']),
   calorieGoal: formNumber((n) => n.min(1000).max(6000)),
   proteinGoal: formNumber((n) =>
     n.min(20, 'Minimum protein goal is 20 g').max(400, 'Maximum protein goal is 400 g'),
@@ -87,6 +97,6 @@ export const profileSchema = profileFieldsSchema
     }
   });
 
-export type ProfileFormValues = z.infer<typeof profileSchema>;
+export type ProfileFormValues = z.output<typeof profileSchema>;
 export type ProfileFormInput = z.input<typeof profileSchema>;
-export type ProfileUpdateFormValues = z.infer<typeof profileUpdateSchema>;
+export type ProfileUpdateFormValues = z.output<typeof profileUpdateSchema>;

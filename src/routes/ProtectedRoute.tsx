@@ -10,7 +10,11 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, requireProfile = false }: ProtectedRouteProps) {
   const location = useLocation();
-  const { isAuthenticated, profile } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, isAuthReady, profile } = useAppSelector((state) => state.auth);
+
+  if (!isAuthReady) {
+    return null;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
